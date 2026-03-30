@@ -9,6 +9,7 @@ export const products: Product[] = [
     description: "A lifestyle niche account with active engagement history and monetization-ready positioning.",
     longDescription:
       "This digital product package is designed for founders and marketers who need a polished social presence without starting from zero. The account includes a clean posting history, established audience demographics, and immediate transfer instructions after purchase.",
+    image: null,
     price: 280,
     rating: 4.9,
     stockStatus: "In stock",
@@ -26,6 +27,7 @@ export const products: Product[] = [
     description: "A warm, aged email asset appropriate for outreach workflows and account recovery support.",
     longDescription:
       "Ideal for teams that need more trusted sender history, this package includes transfer instructions and access metadata. The frontend is prepared to present admin-managed eligibility rules, stock counts, and customer-facing notes per item.",
+    image: null,
     price: 74,
     rating: 4.7,
     stockStatus: "Limited",
@@ -43,6 +45,7 @@ export const products: Product[] = [
     description: "Multi-brand card bundle with clear denomination breakdown and ready-to-redeem codes.",
     longDescription:
       "This bundle suits customers looking for quick, digitally delivered value. The product detail experience includes fee transparency, delivery expectations, and easy continuation into checkout for both guests and signed-in users.",
+    image: null,
     price: 150,
     rating: 4.8,
     stockStatus: "In stock",
@@ -60,6 +63,7 @@ export const products: Product[] = [
     description: "A starter creator account with niche fit for short-form growth campaigns.",
     longDescription:
       "Built for rapid launch, this product includes account transfer notes and audience summary information. The card layout and detail route are intentionally reusable so future admin-controlled product schemas remain easy to map.",
+    image: null,
     price: 195,
     rating: 4.6,
     stockStatus: "In stock",
@@ -77,6 +81,7 @@ export const products: Product[] = [
     description: "A business-ready inbox package with recovery information and onboarding notes.",
     longDescription:
       "The checkout flow supports fast conversion for this high-intent product category while the dashboard later surfaces purchased credentials through downloadable records and order history tracking.",
+    image: null,
     price: 96,
     rating: 4.8,
     stockStatus: "In stock",
@@ -94,6 +99,7 @@ export const products: Product[] = [
     description: "Flexible voucher assortment for cross-region buyers who need instant digital value.",
     longDescription:
       "This product demonstrates category expansion support in the marketplace grid while maintaining the same visual and data architecture across every listing type.",
+    image: null,
     price: 120,
     rating: 4.5,
     stockStatus: "Limited",
