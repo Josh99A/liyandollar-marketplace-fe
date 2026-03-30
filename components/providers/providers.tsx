@@ -6,7 +6,7 @@ import { ModalProvider } from "@/components/ui/modal-provider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider>
       <ModalProvider>
         <AuthBootstrap />
         {children}
