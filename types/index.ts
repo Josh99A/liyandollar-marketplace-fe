@@ -53,6 +53,21 @@ export type PaymentSubmission = {
   review_status: string;
 };
 
+export type WalletSummary = {
+  balance: number;
+  totalDeposits: number;
+  totalSpend: number;
+};
+
+export type WalletTransaction = {
+  id: string;
+  title: string;
+  type: "deposit" | "purchase";
+  amount: number;
+  createdAt: string;
+  status: string;
+};
+
 export type Order = {
   id: string;
   reference: string;
