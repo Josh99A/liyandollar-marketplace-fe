@@ -1,4 +1,4 @@
-import type { Order, WalletSummary, WalletTransaction } from "@/types";
+import type { WalletSummary, WalletTransaction } from "@/types";
 
 export const walletSummary: WalletSummary = {
   balance: 1240.5,
@@ -49,7 +49,16 @@ export const transactions: WalletTransaction[] = [
   },
 ];
 
-export const orders: Order[] = [
+type MockOrder = {
+  id: string;
+  productName: string;
+  status: string;
+  deliveredAt: string;
+  total: number;
+  credentials: { label: string; value: string }[];
+};
+
+export const orders: MockOrder[] = [
   {
     id: "ord_10391",
     productName: "Instagram Growth Account",
