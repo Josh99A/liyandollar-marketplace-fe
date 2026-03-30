@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/use-auth-store";
 
 type AuthMode = "login" | "register";
@@ -9,7 +9,6 @@ type AuthMode = "login" | "register";
 export function AuthForm({ mode }: { mode: AuthMode }) {
   const isRegister = mode === "register";
   const router = useRouter();
-  const searchParams = useSearchParams();
   const login = useAuthStore((state) => state.login);
   const register = useAuthStore((state) => state.register);
   const isLoading = useAuthStore((state) => state.isLoading);
@@ -51,7 +50,10 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         });
       }
 
-      const redirectTo = searchParams.get("redirect") ?? "/dashboard";
+      const redirectTo =
+        typeof window === "undefined"
+          ? "/dashboard"
+          : new URLSearchParams(window.location.search).get("redirect") ?? "/dashboard";
       router.push(redirectTo);
       router.refresh();
     } catch {
