@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import { useAuthStore } from "@/stores/use-auth-store";
 
 type AuthMode = "login" | "register";
@@ -34,6 +35,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       if (isRegister) {
         if (form.password !== form.confirmPassword) {
           setError("Passwords do not match.");
+          toast.error("Passwords do not match.");
           return;
         }
         await register({
@@ -56,8 +58,10 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
           : new URLSearchParams(window.location.search).get("redirect") ?? "/dashboard";
       router.push(redirectTo);
       router.refresh();
+      toast.success(isRegister ? "Account created. Welcome!" : "Welcome back.");
     } catch {
       setError("Authentication failed. Check your details and try again.");
+      toast.error("Authentication failed. Please try again.");
     }
   };
 

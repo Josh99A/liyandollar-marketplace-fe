@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 import type { Product } from "@/types";
 import type { PaymentAsset } from "@/types";
 import { getPaymentAssets } from "@/lib/services/payments";
+import toast from "react-hot-toast";
 
 function ProductFallbackIcon({ category }: { category: string }) {
   const normalized = category.toLowerCase();
@@ -48,6 +49,7 @@ export function ProductCard({ product }: { product: Product }) {
       setSelectedAssetId((current) => current ?? data[0]?.id ?? null);
     } catch {
       setAssetError("Unable to load payment assets. Please try again shortly.");
+      toast.error("Unable to load payment assets.");
     } finally {
       setLoadingAssets(false);
     }
@@ -63,6 +65,7 @@ export function ProductCard({ product }: { product: Product }) {
     await navigator.clipboard.writeText(selectedAsset.wallet_address);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1800);
+    toast.success("Wallet address copied.");
   };
 
   return (

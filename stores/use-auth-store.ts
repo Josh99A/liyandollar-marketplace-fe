@@ -2,6 +2,17 @@ import { create } from "zustand";
 import type { ApiUser } from "@/types";
 import * as authService from "@/lib/services/auth";
 
+const setAuthSessionCookie = () => {
+  if (typeof document === "undefined") return;
+  const secure = window.location.protocol === "https:" ? " Secure;" : "";
+  document.cookie = `auth-session=1; Path=/; SameSite=Lax;${secure}`;
+};
+
+const clearAuthSessionCookie = () => {
+  if (typeof document === "undefined") return;
+  document.cookie = "auth-session=; Path=/; Max-Age=0; SameSite=Lax;";
+};
+
 type AuthStore = {
   user: ApiUser | null;
   isLoading: boolean;
@@ -28,20 +39,24 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       const user = await authService.getCurrentUser();
       set({ user, hasBootstrapped: true, isLoading: false });
+      setAuthSessionCookie();
     } catch {
       set({ user: null, hasBootstrapped: true, isLoading: false });
+      clearAuthSessionCookie();
     }
   },
   login: async (payload) => {
     set({ isLoading: true });
     const user = await authService.login(payload);
     set({ user, isLoading: false, hasBootstrapped: true });
+    setAuthSessionCookie();
     return user;
   },
   register: async (payload) => {
     set({ isLoading: true });
     const user = await authService.register(payload);
     set({ user, isLoading: false, hasBootstrapped: true });
+    setAuthSessionCookie();
     return user;
   },
   logout: async () => {
@@ -50,6 +65,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       await authService.logout();
     } finally {
       set({ user: null, isLoading: false, hasBootstrapped: true });
+      clearAuthSessionCookie();
     }
   },
 }));

@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImageIcon, LoaderCircle, Shield, Trash2, Users } from "lucide-react";
+import toast from "react-hot-toast";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { useAuthStore } from "@/stores/use-auth-store";
 import {
@@ -174,9 +175,11 @@ export function AdminDashboardClient() {
         return [saved, ...next];
       });
       setMessage("Product saved.");
+      toast.success("Product saved.");
       resetProductForm();
     } catch {
       setError("Unable to save product. Make sure the credentials JSON is valid.");
+      toast.error("Unable to save product.");
     } finally {
       setBusy(false);
     }
@@ -207,9 +210,11 @@ export function AdminDashboardClient() {
         return [...next, saved];
       });
       setMessage("Payment asset saved.");
+      toast.success("Payment asset saved.");
       resetAssetForm();
     } catch {
       setError("Unable to save payment asset.");
+      toast.error("Unable to save payment asset.");
     } finally {
       setBusy(false);
     }
@@ -439,6 +444,7 @@ export function AdminDashboardClient() {
                         onClick={async () => {
                           await deleteAdminProduct(product.id);
                           setProducts((current) => current.filter((item) => item.id !== product.id));
+                          toast.success("Product deleted.");
                         }}
                         className="inline-flex items-center gap-2 rounded-full border border-rose-300 px-4 py-2 text-sm font-semibold text-rose-600"
                       >
@@ -558,6 +564,7 @@ export function AdminDashboardClient() {
                         onClick={async () => {
                           await deleteAdminPaymentAsset(asset.id);
                           setPaymentAssets((current) => current.filter((item) => item.id !== asset.id));
+                          toast.success("Payment asset deleted.");
                         }}
                         className="inline-flex items-center gap-2 rounded-full border border-rose-300 px-4 py-2 text-sm font-semibold text-rose-600"
                       >
@@ -596,6 +603,7 @@ export function AdminDashboardClient() {
                           const updated = await setAdminOrderStatus(order.id, status);
                           setOrders((current) => current.map((item) => (item.id === updated.id ? updated : item)));
                           setMessage(`Order ${order.reference} marked ${status}.`);
+                          toast.success(`Order marked ${status.replaceAll("_", " ")}.`);
                         }}
                         className={`rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${order.status === status ? "bg-primary text-white" : "border border-border bg-card text-muted"}`}
                       >
@@ -627,29 +635,31 @@ export function AdminDashboardClient() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const updated = await updateAdminUserRole(managedUser.id, {
-                          is_staff: !managedUser.is_staff,
-                          is_active: managedUser.is_active ?? true,
-                        });
-                        setUsers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
-                      }}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const updated = await updateAdminUserRole(managedUser.id, {
+                            is_staff: !managedUser.is_staff,
+                            is_active: managedUser.is_active ?? true,
+                          });
+                          setUsers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+                          toast.success(managedUser.is_staff ? "Admin role removed." : "Admin role granted.");
+                        }}
                       className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${managedUser.is_staff ? "bg-primary text-white" : "border border-border bg-card text-muted"}`}
                     >
                       <Shield className="h-4 w-4" />
                       {managedUser.is_staff ? "Admin" : "Make admin"}
                     </button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const updated = await updateAdminUserRole(managedUser.id, {
-                          is_staff: managedUser.is_staff,
-                          is_active: !(managedUser.is_active ?? true),
-                        });
-                        setUsers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
-                      }}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const updated = await updateAdminUserRole(managedUser.id, {
+                            is_staff: managedUser.is_staff,
+                            is_active: !(managedUser.is_active ?? true),
+                          });
+                          setUsers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+                          toast.success((managedUser.is_active ?? true) ? "User deactivated." : "User activated.");
+                        }}
                       className={`rounded-full px-4 py-2 text-sm font-semibold ${(managedUser.is_active ?? true) ? "border border-border bg-card text-muted" : "bg-rose-500/12 text-rose-700 dark:text-rose-200"}`}
                     >
                       {(managedUser.is_active ?? true) ? "Deactivate" : "Activate"}

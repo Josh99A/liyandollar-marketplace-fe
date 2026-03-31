@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Copy, LoaderCircle } from "lucide-react";
+import toast from "react-hot-toast";
 import { CheckoutSummary } from "@/components/marketplace/checkout-summary";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { useAuthStore } from "@/stores/use-auth-store";
@@ -82,8 +83,10 @@ export function CheckoutClient({ slug }: { slug: string }) {
       const created = await createOrder(product.id);
       setOrder(created);
       setMessage("Order created. Select a payment asset to reveal wallet instructions.");
+      toast.success("Order created. Select a payment asset.");
     } catch {
       setError("We could not create the order. Make sure you are signed in and try again.");
+      toast.error("Unable to create order.");
     } finally {
       setSubmitting(false);
     }
@@ -99,8 +102,10 @@ export function CheckoutClient({ slug }: { slug: string }) {
       setOrder(updatedOrder);
       setPaymentDetails(details);
       setMessage("Payment instructions loaded. Send the exact amount using the correct network.");
+      toast.success("Payment instructions loaded.");
     } catch {
       setError("Unable to load payment instructions for that asset.");
+      toast.error("Unable to load payment instructions.");
     } finally {
       setSubmitting(false);
     }
@@ -114,8 +119,10 @@ export function CheckoutClient({ slug }: { slug: string }) {
       const response = await submitPayment(order.id, form);
       setOrder(response.order);
       setMessage(response.message);
+      toast.success("Payment submitted for admin review.");
     } catch {
       setError("Payment proof submission failed. Please try again.");
+      toast.error("Payment proof submission failed.");
     } finally {
       setSubmitting(false);
     }
@@ -125,6 +132,7 @@ export function CheckoutClient({ slug }: { slug: string }) {
     if (!paymentDetails) return;
     await navigator.clipboard.writeText(paymentDetails.asset.wallet_address);
     setMessage("Wallet address copied.");
+    toast.success("Wallet address copied.");
   };
 
   if (loading) {

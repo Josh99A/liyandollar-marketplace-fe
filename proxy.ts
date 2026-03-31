@@ -14,8 +14,9 @@ export function proxy(request: NextRequest) {
   }
 
   const authToken = request.cookies.get("auth-token");
+  const authSession = request.cookies.get("auth-session");
 
-  if (!authToken) {
+  if (!authToken && !authSession) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
