@@ -4,12 +4,14 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { AuthBootstrap } from "@/components/providers/auth-bootstrap";
 import { ModalProvider } from "@/components/ui/modal-provider";
 import { Toaster } from "react-hot-toast";
+import { NotificationsBridge } from "@/components/providers/notifications-bridge";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
       <ModalProvider>
         <AuthBootstrap />
+        <NotificationsBridge />
         <Toaster
           position="top-right"
           toastOptions={{

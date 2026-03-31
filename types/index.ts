@@ -92,3 +92,13 @@ export type CredentialsResponse = {
   credentials: Record<string, string>;
   unlocked_at: string;
 };
+
+export type NotificationItem = {
+  id: number;
+  title: string;
+  message: string;
+  level: "info" | "success" | "warning" | "error";
+  is_read: boolean;
+  created_at: string;
+  order: number | null;
+};
