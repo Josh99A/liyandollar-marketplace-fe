@@ -56,8 +56,12 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         typeof window === "undefined"
           ? "/dashboard"
           : new URLSearchParams(window.location.search).get("redirect") ?? "/dashboard";
-      router.push(redirectTo);
-      router.refresh();
+      if (typeof window !== "undefined") {
+        window.location.assign(redirectTo);
+      } else {
+        router.push(redirectTo);
+        router.refresh();
+      }
       toast.success(isRegister ? "Account created. Welcome!" : "Welcome back.");
     } catch {
       setError("Authentication failed. Check your details and try again.");
