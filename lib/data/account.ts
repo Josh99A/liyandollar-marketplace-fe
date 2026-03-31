@@ -3,7 +3,7 @@ import type { WalletSummary, WalletTransaction } from "@/types";
 export const walletSummary: WalletSummary = {
   balance: 1240.5,
   totalDeposits: 3200,
-  totalSpend: 1959.5,
+  totalWithdrawals: 1959.5,
 };
 
 export const transactions: WalletTransaction[] = [

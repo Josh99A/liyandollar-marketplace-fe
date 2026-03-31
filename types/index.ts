@@ -56,7 +56,7 @@ export type PaymentSubmission = {
 export type WalletSummary = {
   balance: number;
   totalDeposits: number;
-  totalSpend: number;
+  totalWithdrawals: number;
 };
 
 export type WalletTransaction = {
@@ -66,6 +66,52 @@ export type WalletTransaction = {
   amount: number;
   createdAt: string;
   status: string;
+};
+
+export type WalletAsset = {
+  id: string;
+  name: string;
+  symbol: string;
+  network: string;
+  wallet_address: string;
+  qr_code: string | null;
+  instructions: string;
+};
+
+export type DepositRequest = {
+  id: number;
+  amount: number;
+  status: "pending" | "confirmed" | "rejected";
+  tx_hash: string;
+  note: string;
+  crypto_asset: WalletAsset;
+  created_at: string;
+  admin_note: string;
+};
+
+export type WithdrawalRequest = {
+  id: number;
+  amount: number;
+  destination_address: string;
+  destination_qr_code: string | null;
+  network: string;
+  status: "pending" | "approved" | "rejected" | "completed";
+  note: string;
+  created_at: string;
+  admin_note: string;
+};
+
+export type WalletTransactionLog = {
+  id: number;
+  transaction_type: "deposit" | "withdrawal";
+  reference_type: "deposit_request" | "withdrawal_request";
+  reference_id: number;
+  amount: number;
+  balance_before: number;
+  balance_after: number;
+  status: string;
+  description: string;
+  created_at: string;
 };
 
 export type Order = {

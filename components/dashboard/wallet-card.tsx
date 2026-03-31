@@ -30,9 +30,9 @@ export function WalletCard({ wallet }: { wallet: WalletSummary }) {
             <div className="mb-3 inline-flex rounded-xl bg-amber-500/12 p-2 text-warning">
               <ArrowUpRight className="h-4 w-4" />
             </div>
-            <p className="text-sm text-muted">Total spend</p>
+            <p className="text-sm text-muted">Total withdrawals</p>
             <p className="mt-2 text-xl font-semibold">
-              ${wallet.totalSpend.toFixed(2)}
+              ${wallet.totalWithdrawals.toFixed(2)}
             </p>
           </div>
         </div>
