@@ -1,3 +1,5 @@
+"use client";
+
 import { usePathname } from "next/navigation";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { useAuthStore } from "@/stores/use-auth-store";
