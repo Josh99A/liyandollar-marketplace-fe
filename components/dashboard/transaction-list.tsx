@@ -1,10 +1,10 @@
 import { ArrowDownCircle, ArrowUpCircle } from "lucide-react";
-import type { WalletTransaction } from "@/types";
+import type { WalletTransactionLog } from "@/types";
 
 export function TransactionList({
   transactions,
 }: {
-  transactions: WalletTransaction[];
+  transactions: WalletTransactionLog[];
 }) {
   return (
     <section className="rounded-[2rem] border border-border bg-card/90 p-6 shadow-[var(--shadow-soft)]">
@@ -18,8 +18,14 @@ export function TransactionList({
       </div>
 
       <div className="mt-6 space-y-4">
+        {transactions.length === 0 ? (
+          <div className="rounded-2xl border border-border bg-bg/60 px-4 py-3 text-sm text-muted">
+            No wallet activity yet.
+          </div>
+        ) : null}
         {transactions.map((transaction) => {
-          const isDeposit = transaction.type === "deposit";
+          const isDeposit = transaction.transaction_type === "deposit";
+          const title = isDeposit ? "Deposit" : "Withdrawal";
 
           return (
             <div
@@ -35,10 +41,13 @@ export function TransactionList({
                   )}
                 </div>
                 <div>
-                  <p className="font-semibold">{transaction.title}</p>
+                  <p className="font-semibold">{title}</p>
                   <p className="text-sm text-muted">
-                    {transaction.createdAt} • {transaction.status}
+                    {transaction.created_at} • {transaction.status}
                   </p>
+                  {transaction.description ? (
+                    <p className="mt-1 text-xs text-muted">{transaction.description}</p>
+                  ) : null}
                 </div>
               </div>
               <p className="text-lg font-semibold">

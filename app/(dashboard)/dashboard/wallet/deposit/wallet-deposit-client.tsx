@@ -77,8 +77,8 @@ export function WalletDepositClient() {
     <div className="space-y-8">
       <SectionHeading
         eyebrow="Deposit"
-        title="Select a crypto asset and submit your deposit request"
-        description="Admins manually confirm deposits. Use the correct network and double-check wallet addresses before sending funds."
+        title="Select a crypto asset and submit a deposit request"
+        description="Deposits are confirmed manually. Send funds using the exact network and wallet address below to avoid delays."
       />
 
       {loading ? (
@@ -107,12 +107,12 @@ export function WalletDepositClient() {
                   </p>
                   <h3 className="mt-2 text-lg font-semibold">{asset.name}</h3>
                   <p className="mt-1 text-sm text-muted">{asset.network}</p>
-                  <p className="mt-2 text-xs leading-6 text-muted">
-                    {asset.instructions || "Admin-configured manual deposit instructions."}
-                  </p>
-                </button>
-              );
-            })}
+                <p className="mt-2 text-xs leading-6 text-muted">
+                    {asset.instructions || "Send using the network shown. Manual confirmation required."}
+                </p>
+              </button>
+            );
+          })}
           </div>
 
           {selectedAsset ? (
@@ -181,7 +181,7 @@ export function WalletDepositClient() {
 
               <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-400/25 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200">
                 <AlertTriangle className="mt-0.5 h-4 w-4" />
-                <p>Send funds only on the selected network. Deposits are manually confirmed by admins.</p>
+                <p>Only send funds on the selected network. Deposits are released after admin confirmation.</p>
               </div>
 
               <button

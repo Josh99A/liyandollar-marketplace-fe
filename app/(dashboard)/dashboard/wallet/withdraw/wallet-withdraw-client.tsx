@@ -45,6 +45,14 @@ export function WalletWithdrawClient() {
       toast.error("Destination address and network are required.");
       return;
     }
+    if (wallet && Number(form.amount) > wallet.balance) {
+      toast.error("Withdrawal amount exceeds your available balance.");
+      return;
+    }
+    const confirmMessage = `You are requesting $${Number(form.amount).toFixed(2)} on ${form.network} to:\n${form.destination_address}\n\nAre you sure all details are correct?`;
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -59,7 +67,7 @@ export function WalletWithdrawClient() {
         formData.append("note", form.note);
       }
       await createWithdrawalRequest(formData);
-      toast.success("Withdrawal request submitted.");
+      toast.success("Withdrawal request submitted for admin review.");
       setForm({
         amount: "",
         destination_address: "",
@@ -80,7 +88,7 @@ export function WalletWithdrawClient() {
       <SectionHeading
         eyebrow="Withdraw"
         title="Request a withdrawal to your destination wallet"
-        description="Withdrawals are manually reviewed. Please double-check the destination address and network."
+        description="Withdrawals are reviewed by admins before release. Double-check your network and address to avoid delays."
       />
 
       {loading ? (
@@ -158,7 +166,7 @@ export function WalletWithdrawClient() {
 
           <div className="mt-6 flex items-start gap-3 rounded-2xl border border-amber-400/25 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200">
             <AlertTriangle className="mt-0.5 h-4 w-4" />
-            <p>Double-check destination addresses. Withdrawals are manually reviewed by admins.</p>
+            <p>Double-check the network and address. Withdrawals are manually reviewed before funds are released.</p>
           </div>
 
           <button

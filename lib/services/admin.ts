@@ -1,5 +1,12 @@
 import { apiClient } from "@/lib/api/client";
-import type { ApiUser, Order, PaymentAsset, Product } from "@/types";
+import type {
+  ApiUser,
+  DepositRequest,
+  Order,
+  PaymentAsset,
+  Product,
+  WithdrawalRequest,
+} from "@/types";
 
 type AdminProductApi = {
   id: number;
@@ -196,4 +203,75 @@ export async function updateAdminUser(
 ) {
   const response = await apiClient.patch<ApiUser>(`/api/admin/users/${id}/`, payload);
   return response.data;
+}
+
+export async function getAdminWalletDeposits() {
+  const response = await apiClient.get<DepositRequest[]>("/api/admin/wallet-deposits/");
+  return response.data.map((deposit) => ({
+    ...deposit,
+    amount: Number(deposit.amount),
+  }));
+}
+
+export async function confirmAdminWalletDeposit(id: number, admin_note = "") {
+  const response = await apiClient.post<DepositRequest>(
+    `/api/admin/wallet-deposits/${id}/confirm/`,
+    { admin_note },
+  );
+  return {
+    ...response.data,
+    amount: Number(response.data.amount),
+  };
+}
+
+export async function rejectAdminWalletDeposit(id: number, admin_note = "") {
+  const response = await apiClient.post<DepositRequest>(
+    `/api/admin/wallet-deposits/${id}/reject/`,
+    { admin_note },
+  );
+  return {
+    ...response.data,
+    amount: Number(response.data.amount),
+  };
+}
+
+export async function getAdminWalletWithdrawals() {
+  const response = await apiClient.get<WithdrawalRequest[]>("/api/admin/wallet-withdrawals/");
+  return response.data.map((withdrawal) => ({
+    ...withdrawal,
+    amount: Number(withdrawal.amount),
+  }));
+}
+
+export async function approveAdminWalletWithdrawal(id: number, admin_note = "") {
+  const response = await apiClient.post<WithdrawalRequest>(
+    `/api/admin/wallet-withdrawals/${id}/approve/`,
+    { admin_note },
+  );
+  return {
+    ...response.data,
+    amount: Number(response.data.amount),
+  };
+}
+
+export async function completeAdminWalletWithdrawal(id: number, admin_note = "") {
+  const response = await apiClient.post<WithdrawalRequest>(
+    `/api/admin/wallet-withdrawals/${id}/complete/`,
+    { admin_note },
+  );
+  return {
+    ...response.data,
+    amount: Number(response.data.amount),
+  };
+}
+
+export async function rejectAdminWalletWithdrawal(id: number, admin_note = "") {
+  const response = await apiClient.post<WithdrawalRequest>(
+    `/api/admin/wallet-withdrawals/${id}/reject/`,
+    { admin_note },
+  );
+  return {
+    ...response.data,
+    amount: Number(response.data.amount),
+  };
 }
