@@ -55,8 +55,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   register: async (payload) => {
     set({ isLoading: true });
     const user = await authService.register(payload);
-    set({ user, isLoading: false, hasBootstrapped: true });
-    setAuthSessionCookie();
+    if (user.is_active === false) {
+      set({ user: null, isLoading: false, hasBootstrapped: true });
+      clearAuthSessionCookie();
+    } else {
+      set({ user, isLoading: false, hasBootstrapped: true });
+      setAuthSessionCookie();
+    }
     return user;
   },
   logout: async () => {

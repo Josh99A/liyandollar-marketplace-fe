@@ -189,3 +189,11 @@ export async function updateAdminUserRole(
   const response = await apiClient.patch<ApiUser>(`/api/admin/users/${id}/set-role/`, payload);
   return response.data;
 }
+
+export async function updateAdminUser(
+  id: number,
+  payload: Partial<Pick<ApiUser, "username" | "email" | "first_name" | "last_name" | "is_staff" | "is_active">>,
+) {
+  const response = await apiClient.patch<ApiUser>(`/api/admin/users/${id}/`, payload);
+  return response.data;
+}

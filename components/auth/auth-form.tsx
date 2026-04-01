@@ -38,13 +38,20 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
           toast.error("Passwords do not match.");
           return;
         }
-        await register({
+        const created = await register({
           username: form.username || form.email,
           first_name: form.first_name,
           last_name: form.last_name,
           email: form.email,
           password: form.password,
         });
+        if (created.is_active === false) {
+          const pendingMessage =
+            "Your account was created and is waiting for admin approval. You can log in once it is approved.";
+          setError(pendingMessage);
+          toast.success(pendingMessage);
+          return;
+        }
       } else {
         await login({
           email: form.email,
@@ -63,9 +70,19 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         router.refresh();
       }
       toast.success(isRegister ? "Account created. Welcome!" : "Welcome back.");
-    } catch {
-      setError("Authentication failed. Check your details and try again.");
-      toast.error("Authentication failed. Please try again.");
+    } catch (error) {
+      const fallback = "We couldn’t sign you in. Please check your details and try again.";
+      const rawMessage =
+        typeof error === "object" && error && "response" in error
+          ? (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? fallback
+          : fallback;
+      const normalized = rawMessage.toLowerCase();
+      const message =
+        normalized.includes("pending") || normalized.includes("approval")
+          ? "Your account is pending admin approval. We’ll notify you once it’s approved."
+          : rawMessage;
+      setError(message);
+      toast.error(message);
     }
   };
 

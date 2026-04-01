@@ -19,7 +19,7 @@ import {
   setAdminOrderStatus,
   updateAdminPaymentAsset,
   updateAdminProduct,
-  updateAdminUserRole,
+  updateAdminUser,
 } from "@/lib/services/admin";
 import type { ApiUser, Order, PaymentAsset, Product } from "@/types";
 
@@ -67,6 +67,15 @@ export function AdminDashboardClient() {
     display_order: 0,
     is_active: true,
     qr_code_image: null as File | null,
+  });
+  const [userForm, setUserForm] = useState({
+    id: 0,
+    username: "",
+    email: "",
+    first_name: "",
+    last_name: "",
+    is_staff: false,
+    is_active: true,
   });
 
   useEffect(() => {
@@ -151,6 +160,17 @@ export function AdminDashboardClient() {
       qr_code_image: null,
     });
 
+  const resetUserForm = () =>
+    setUserForm({
+      id: 0,
+      username: "",
+      email: "",
+      first_name: "",
+      last_name: "",
+      is_staff: false,
+      is_active: true,
+    });
+
   const saveProduct = async () => {
     setBusy(true);
     setError(null);
@@ -180,6 +200,31 @@ export function AdminDashboardClient() {
     } catch {
       setError("Unable to save product. Make sure the credentials JSON is valid.");
       toast.error("Unable to save product.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveUser = async () => {
+    if (!userForm.id) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const updated = await updateAdminUser(userForm.id, {
+        username: userForm.username,
+        email: userForm.email,
+        first_name: userForm.first_name,
+        last_name: userForm.last_name,
+        is_staff: userForm.is_staff,
+        is_active: userForm.is_active,
+      });
+      setUsers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+      setUserForm((current) => ({ ...current, ...updated }));
+      setMessage("User updated.");
+      toast.success("User updated.");
+    } catch {
+      setError("Unable to update user.");
+      toast.error("Unable to update user.");
     } finally {
       setBusy(false);
     }
@@ -619,57 +664,131 @@ export function AdminDashboardClient() {
       ) : null}
 
       {tab === "users" ? (
-        <section className="rounded-[1.75rem] border border-border bg-card/90 p-5 shadow-[var(--shadow-soft)]">
-          <h2 className="text-xl font-semibold">User management</h2>
-          <div className="mt-5 grid gap-4">
-            {users.map((managedUser) => (
-              <article key={managedUser.id} className="rounded-3xl border border-border bg-bg/50 p-4">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className="rounded-2xl bg-accent p-3 text-primary">
-                      <Users className="h-4 w-4" />
+        <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
+          <section className="rounded-[1.75rem] border border-border bg-card/90 p-5 shadow-[var(--shadow-soft)]">
+            <h2 className="text-xl font-semibold">Edit user</h2>
+            <p className="mt-2 text-sm text-muted">Select a user to edit their profile and access level.</p>
+            <div className="mt-5 grid gap-4">
+              {[
+                ["username", "Username"],
+                ["email", "Email"],
+                ["first_name", "First name"],
+                ["last_name", "Last name"],
+              ].map(([key, label]) => (
+                <label key={key} className="space-y-2 text-sm font-medium">
+                  <span>{label}</span>
+                  <input
+                    value={userForm[key as keyof typeof userForm] as string}
+                    onChange={(event) => setUserForm((current) => ({ ...current, [key]: event.target.value }))}
+                    className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
+                  />
+                </label>
+              ))}
+              <label className="flex items-center gap-3 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={userForm.is_staff}
+                  onChange={(event) => setUserForm((current) => ({ ...current, is_staff: event.target.checked }))}
+                />
+                Admin access
+              </label>
+              <label className="flex items-center gap-3 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={userForm.is_active}
+                  onChange={(event) => setUserForm((current) => ({ ...current, is_active: event.target.checked }))}
+                />
+                Active account
+              </label>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={saveUser}
+                  disabled={busy || !userForm.id}
+                  className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  {busy ? "Saving..." : "Save changes"}
+                </button>
+                <button type="button" onClick={resetUserForm} className="rounded-full border border-border px-5 py-3 text-sm font-semibold">
+                  Clear
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-[1.75rem] border border-border bg-card/90 p-5 shadow-[var(--shadow-soft)]">
+            <h2 className="text-xl font-semibold">User management</h2>
+            <div className="mt-5 grid gap-4">
+              {users.map((managedUser) => (
+                <article key={managedUser.id} className="rounded-3xl border border-border bg-bg/50 p-4">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className="rounded-2xl bg-accent p-3 text-primary">
+                        <Users className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">{managedUser.email}</h3>
+                        <p className="text-sm text-muted">{managedUser.first_name} {managedUser.last_name} • @{managedUser.username}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-lg font-semibold">{managedUser.email}</h3>
-                      <p className="text-sm text-muted">{managedUser.first_name} {managedUser.last_name} • @{managedUser.username}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setUserForm({
+                            id: managedUser.id,
+                            username: managedUser.username,
+                            email: managedUser.email,
+                            first_name: managedUser.first_name,
+                            last_name: managedUser.last_name,
+                            is_staff: managedUser.is_staff,
+                            is_active: managedUser.is_active ?? true,
+                          })
+                        }
+                        className="rounded-full border border-border px-4 py-2 text-sm font-semibold"
+                      >
+                        Edit
+                      </button>
                       <button
                         type="button"
                         onClick={async () => {
-                          const updated = await updateAdminUserRole(managedUser.id, {
+                          const updated = await updateAdminUser(managedUser.id, {
                             is_staff: !managedUser.is_staff,
-                            is_active: managedUser.is_active ?? true,
                           });
                           setUsers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+                          if (userForm.id === updated.id) {
+                            setUserForm((current) => ({ ...current, is_staff: updated.is_staff }));
+                          }
                           toast.success(managedUser.is_staff ? "Admin role removed." : "Admin role granted.");
                         }}
-                      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${managedUser.is_staff ? "bg-primary text-white" : "border border-border bg-card text-muted"}`}
-                    >
-                      <Shield className="h-4 w-4" />
-                      {managedUser.is_staff ? "Admin" : "Make admin"}
-                    </button>
+                        className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${managedUser.is_staff ? "bg-primary text-white" : "border border-border bg-card text-muted"}`}
+                      >
+                        <Shield className="h-4 w-4" />
+                        {managedUser.is_staff ? "Admin" : "Make admin"}
+                      </button>
                       <button
                         type="button"
                         onClick={async () => {
-                          const updated = await updateAdminUserRole(managedUser.id, {
-                            is_staff: managedUser.is_staff,
+                          const updated = await updateAdminUser(managedUser.id, {
                             is_active: !(managedUser.is_active ?? true),
                           });
                           setUsers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+                          if (userForm.id === updated.id) {
+                            setUserForm((current) => ({ ...current, is_active: updated.is_active ?? true }));
+                          }
                           toast.success((managedUser.is_active ?? true) ? "User deactivated." : "User activated.");
                         }}
-                      className={`rounded-full px-4 py-2 text-sm font-semibold ${(managedUser.is_active ?? true) ? "border border-border bg-card text-muted" : "bg-rose-500/12 text-rose-700 dark:text-rose-200"}`}
-                    >
-                      {(managedUser.is_active ?? true) ? "Deactivate" : "Activate"}
-                    </button>
+                        className={`rounded-full px-4 py-2 text-sm font-semibold ${(managedUser.is_active ?? true) ? "border border-border bg-card text-muted" : "bg-rose-500/12 text-rose-700 dark:text-rose-200"}`}
+                      >
+                        {(managedUser.is_active ?? true) ? "Deactivate" : "Activate"}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
       ) : null}
     </div>
   );
