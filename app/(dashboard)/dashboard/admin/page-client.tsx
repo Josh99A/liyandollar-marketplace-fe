@@ -319,7 +319,7 @@ export function AdminDashboardClient() {
       </div>
 
       {message ? <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-200">{message}</div> : null}
-      {error ? <div className="rounded-2xl border border-rose-400/30 bg-rose-500/10 p-4 text-sm text-rose-700 dark:text-rose-200">{error}</div> : null}
+      {error ? <div className="rounded-2xl border border-[var(--color-danger)]/30 bg-[var(--color-danger-soft)] p-4 text-sm text-[var(--color-danger)]">{error}</div> : null}
 
       {tab === "products" ? (
         <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">

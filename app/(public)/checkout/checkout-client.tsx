@@ -375,7 +375,7 @@ export function CheckoutClient({ slug }: { slug: string }) {
             </div>
           ) : null}
           {error ? (
-            <div className="mt-6 rounded-2xl border border-rose-400/30 bg-rose-500/10 p-4 text-sm text-rose-700 dark:text-rose-200">
+            <div className="mt-6 rounded-2xl border border-[var(--color-danger)]/30 bg-[var(--color-danger-soft)] p-4 text-sm text-[var(--color-danger)]">
               {error}
             </div>
           ) : null}

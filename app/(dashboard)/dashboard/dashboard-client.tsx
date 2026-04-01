@@ -69,7 +69,7 @@ export function DashboardClient() {
       />
 
       {error ? (
-        <div className="rounded-[1.75rem] border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
+        <div className="rounded-[1.75rem] border border-[var(--color-danger)]/30 bg-[var(--color-danger-soft)] px-4 py-3 text-sm text-[var(--color-danger)]">
           {error}
         </div>
       ) : null}

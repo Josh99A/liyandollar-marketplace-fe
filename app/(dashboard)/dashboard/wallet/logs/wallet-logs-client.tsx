@@ -74,7 +74,7 @@ export function WalletLogsClient() {
           <p className="text-sm text-muted">Loading logs...</p>
         </div>
       ) : error ? (
-        <div className="rounded-[1.75rem] border border-rose-400/30 bg-rose-500/10 p-6 text-sm text-rose-700 dark:text-rose-200">
+        <div className="rounded-[1.75rem] border border-[var(--color-danger)]/30 bg-[var(--color-danger-soft)] p-6 text-sm text-[var(--color-danger)]">
           {error}
         </div>
       ) : tab === "deposits" ? (
