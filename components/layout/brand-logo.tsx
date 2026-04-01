@@ -17,7 +17,7 @@ export function BrandLogo({
         width={220}
         height={220}
         priority={priority}
-        className="h-auto w-[5.5rem] sm:w-[6.5rem]"
+        className="h-auto w-[4.5rem] sm:w-[5.25rem]"
       />
     </Link>
   );

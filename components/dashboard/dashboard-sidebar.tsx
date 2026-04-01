@@ -19,14 +19,12 @@ export function DashboardSidebar() {
   ];
 
   return (
-    <aside className="hidden w-72 shrink-0 flex-col rounded-[2rem] border border-border bg-card/90 p-5 shadow-[var(--shadow-soft)] lg:sticky lg:top-24 lg:h-[calc(100vh-8rem)] lg:flex">
-      <div className="rounded-[1.5rem] border border-border bg-bg/70 p-5">
+    <aside className="hidden w-72 shrink-0 flex-col rounded-[2rem] border border-border bg-card/90 p-5 shadow-[var(--shadow-soft)] md:sticky md:top-24 md:h-[calc(100vh-8rem)] md:flex">
+      <div className="flex items-center justify-between">
         <BrandLogo className="w-fit rounded-2xl bg-card px-3 py-2 shadow-[0_12px_32px_rgba(7,43,75,0.12)]" />
-        <p className="mt-4 text-xs uppercase tracking-[0.3em] text-muted">Dashboard</p>
-        <h2 className="mt-2 font-display text-2xl font-semibold">Wallet workspace</h2>
-        <p className="mt-2 text-sm leading-7 text-muted">
-          Manage balances, orders, deposits, and withdrawals from one secure hub.
-        </p>
+        <span className="rounded-full border border-border bg-bg/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.28em] text-muted">
+          Dashboard
+        </span>
       </div>
 
       <nav className="mt-6 flex flex-1 flex-col gap-6 overflow-auto pr-1">

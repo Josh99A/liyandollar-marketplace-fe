@@ -636,7 +636,7 @@ export function AdminDashboardClient() {
                     <StatusPill value={order.status} />
                     <h3 className="mt-3 text-lg font-semibold">{order.product.name}</h3>
                     <p className="mt-1 text-sm text-muted">
-                      {order.user ? `${order.user.email} • ` : ""}Ref: {order.reference}
+                      {order.user ? `${order.user.username || order.user.email} • ` : ""}Ref: {order.reference}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -727,8 +727,8 @@ export function AdminDashboardClient() {
                         <Users className="h-4 w-4" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold">{managedUser.email}</h3>
-                        <p className="text-sm text-muted">{managedUser.first_name} {managedUser.last_name} • @{managedUser.username}</p>
+                        <h3 className="text-lg font-semibold">{managedUser.username || managedUser.email}</h3>
+                        <p className="text-sm text-muted">{managedUser.first_name} {managedUser.last_name} • {managedUser.email}</p>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">

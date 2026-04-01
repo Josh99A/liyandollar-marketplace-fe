@@ -5,6 +5,7 @@ import { AuthBootstrap } from "@/components/providers/auth-bootstrap";
 import { ModalProvider } from "@/components/ui/modal-provider";
 import { Toaster } from "react-hot-toast";
 import { NotificationsBridge } from "@/components/providers/notifications-bridge";
+import { SupportWidget } from "@/components/support/support-widget";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -12,6 +13,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <ModalProvider>
         <AuthBootstrap />
         <NotificationsBridge />
+        <SupportWidget />
         <Toaster
           position="top-right"
           toastOptions={{

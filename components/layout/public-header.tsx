@@ -7,6 +7,7 @@ import { useTheme } from "@/components/providers/theme-provider";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { cn } from "@/lib/utils/cn";
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { SupportLauncher } from "@/components/support/support-launcher";
 
 const coreNavItems = [
   { href: "/", label: "Home" },
@@ -64,6 +65,7 @@ export function PublicHeader() {
         </nav>
 
         <div className="flex items-center gap-1.5">
+          <SupportLauncher />
           <button
             type="button"
             onClick={() =>

@@ -148,3 +148,22 @@ export type NotificationItem = {
   created_at: string;
   order: number | null;
 };
+
+export type SupportMessage = {
+  id: number;
+  sender_role: "user" | "guest" | "admin";
+  sender_name: string | null;
+  sender_email: string | null;
+  message: string;
+  created_at: string;
+};
+
+export type SupportTicket = {
+  id: number;
+  subject: string;
+  status: "open" | "pending" | "resolved" | "closed";
+  created_at: string;
+  last_message?: string | null;
+  last_message_at?: string | null;
+  messages?: SupportMessage[];
+};

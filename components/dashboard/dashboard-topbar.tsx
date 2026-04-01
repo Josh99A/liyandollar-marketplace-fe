@@ -12,6 +12,7 @@ import { adminNav, primaryNav, supportNav, walletNav } from "@/components/naviga
 import { cn } from "@/lib/utils/cn";
 import { getNotifications, markNotificationsRead } from "@/lib/services/notifications";
 import type { NotificationItem } from "@/types";
+import { SupportLauncher } from "@/components/support/support-launcher";
 
 export function DashboardTopbar() {
   const pathname = usePathname();
@@ -51,7 +52,8 @@ export function DashboardTopbar() {
   const initials =
     user?.first_name || user?.last_name
       ? `${user?.first_name?.[0] ?? ""}${user?.last_name?.[0] ?? ""}`.toUpperCase()
-      : user?.email?.[0]?.toUpperCase() ?? "U";
+      : user?.username?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? "U";
+  const displayName = user?.username || user?.email || "Account";
 
   return (
     <>
@@ -88,6 +90,7 @@ export function DashboardTopbar() {
         </div>
 
         <div className="flex items-center gap-2">
+          <SupportLauncher className="bg-bg" />
           <div className="relative">
             <button
               type="button"
@@ -170,7 +173,7 @@ export function DashboardTopbar() {
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
                 {initials}
               </span>
-              <span className="hidden sm:inline">{user?.email ?? "Account"}</span>
+              <span className="hidden sm:inline">{displayName}</span>
               <UserCircle2 className="h-4 w-4 text-muted" />
             </button>
 
@@ -182,7 +185,7 @@ export function DashboardTopbar() {
             >
               <div className="px-3 py-2">
                 <p className="text-xs uppercase tracking-[0.24em] text-muted">Signed in</p>
-                <p className="mt-1 text-sm font-semibold">{user?.email ?? "Account"}</p>
+                <p className="mt-1 text-sm font-semibold">{displayName}</p>
               </div>
               <div className="mt-2 flex flex-col gap-1">
                 <Link

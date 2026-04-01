@@ -122,13 +122,13 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         </>
       ) : null}
       <label className="space-y-2 text-sm font-medium">
-        <span>Email address</span>
+        <span>Email or username</span>
         <input
-          type="email"
+          type="text"
           value={form.email}
           onChange={(event) => handleChange("email", event.target.value)}
           className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none placeholder:text-muted/70 focus:border-primary"
-          placeholder="jane@company.com"
+          placeholder="jane@company.com or janedoe"
         />
       </label>
       <label className="space-y-2 text-sm font-medium">
