@@ -27,7 +27,8 @@ export function DashboardClient() {
         const walletData = await getWallet();
         if (!active) return;
         setWallet(walletData);
-      } catch {
+      } catch (err) {
+        console.error("Failed to load wallet summary", err);
         if (!active) return;
         setError("Unable to load your dashboard data.");
       } finally {
@@ -57,7 +58,8 @@ export function DashboardClient() {
           setTransactions(transactionData);
           setOrders(orderData);
         });
-      } catch {
+      } catch (err) {
+        console.error("Failed to load dashboard secondary data", err);
         if (!active) return;
         setError("Unable to load your dashboard data.");
       } finally {

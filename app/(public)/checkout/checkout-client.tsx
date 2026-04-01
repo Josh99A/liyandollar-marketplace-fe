@@ -58,7 +58,8 @@ export function CheckoutClient({ slug }: { slug: string }) {
         ]);
         setProduct(resolvedProduct);
         setAssets(paymentAssets);
-      } catch {
+      } catch (err) {
+        console.error("Failed to load checkout context", err);
         setError("Unable to load checkout information right now.");
       } finally {
         setLoading(false);
@@ -84,7 +85,8 @@ export function CheckoutClient({ slug }: { slug: string }) {
       setOrder(created);
       setMessage("Order created. Select a payment asset to reveal wallet instructions.");
       toast.success("Order created. Select a payment asset.");
-    } catch {
+    } catch (err) {
+      console.error("Failed to create order", err);
       setError("We could not create the order. Make sure you are signed in and try again.");
       toast.error("Unable to create order.");
     } finally {
@@ -103,7 +105,8 @@ export function CheckoutClient({ slug }: { slug: string }) {
       setPaymentDetails(details);
       setMessage("Payment instructions loaded. Send the exact amount using the correct network.");
       toast.success("Payment instructions loaded.");
-    } catch {
+    } catch (err) {
+      console.error("Failed to load payment details", err);
       setError("Unable to load payment instructions for that asset.");
       toast.error("Unable to load payment instructions.");
     } finally {
@@ -120,7 +123,8 @@ export function CheckoutClient({ slug }: { slug: string }) {
       setOrder(response.order);
       setMessage(response.message);
       toast.success("Payment submitted for admin review.");
-    } catch {
+    } catch (err) {
+      console.error("Failed to submit payment proof", err);
       setError("Payment proof submission failed. Please try again.");
       toast.error("Payment proof submission failed.");
     } finally {

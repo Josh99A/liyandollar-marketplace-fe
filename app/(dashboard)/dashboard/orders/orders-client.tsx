@@ -33,7 +33,8 @@ export function OrdersClient() {
       try {
         const response = await getOrders();
         setOrders(response);
-      } catch {
+      } catch (err) {
+        console.error("Failed to load orders", err);
         setError("Unable to load orders right now.");
       } finally {
         setLoading(false);

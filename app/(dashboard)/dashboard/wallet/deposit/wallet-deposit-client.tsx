@@ -28,7 +28,8 @@ export function WalletDepositClient() {
         const data = await getDepositAssets();
         setAssets(data);
         setSelectedId(data[0]?.id ?? null);
-      } catch {
+      } catch (err) {
+        console.error("Failed to load deposit assets", err);
         setError("Unable to load deposit assets.");
       } finally {
         setLoading(false);

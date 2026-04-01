@@ -26,7 +26,8 @@ export function WalletLogsClient() {
         ]);
         setDeposits(deps);
         setTransactions(logs);
-      } catch {
+      } catch (err) {
+        console.error("Failed to load wallet logs", err);
         setError("Unable to load wallet logs.");
       } finally {
         setLoading(false);

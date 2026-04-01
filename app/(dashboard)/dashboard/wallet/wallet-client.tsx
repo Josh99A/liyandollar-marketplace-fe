@@ -26,7 +26,8 @@ export function WalletClient() {
         ]);
         setWallet(walletData);
         setTransactions(logs);
-      } catch {
+      } catch (err) {
+        console.error("Failed to load wallet overview", err);
         setError("Unable to load wallet data right now.");
       } finally {
         setLoading(false);
