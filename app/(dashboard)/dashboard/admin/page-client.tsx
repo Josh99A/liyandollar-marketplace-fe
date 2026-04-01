@@ -754,6 +754,7 @@ export function AdminDashboardClient() {
                 ))
               )}
             </div>
+          </section>
         </div>
       ) : null}
 
