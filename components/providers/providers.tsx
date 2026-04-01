@@ -6,6 +6,7 @@ import { ModalProvider } from "@/components/ui/modal-provider";
 import { Toaster } from "react-hot-toast";
 import { NotificationsBridge } from "@/components/providers/notifications-bridge";
 import { SupportWidget } from "@/components/support/support-widget";
+import { ApiHealthCheck } from "@/components/providers/api-health-check";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <ModalProvider>
         <AuthBootstrap />
         <NotificationsBridge />
+        <ApiHealthCheck />
         <SupportWidget />
         <Toaster
           position="top-right"
