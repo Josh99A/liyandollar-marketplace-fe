@@ -8,27 +8,23 @@ import toast from "react-hot-toast";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { useAuthStore } from "@/stores/use-auth-store";
 import {
-  approveAdminWalletWithdrawal,
-  completeAdminWalletWithdrawal,
   confirmAdminWalletDeposit,
   createAdminPaymentAsset,
   createAdminProduct,
   deleteAdminPaymentAsset,
   deleteAdminProduct,
   getAdminWalletDeposits,
-  getAdminWalletWithdrawals,
   getAdminOrders,
   getAdminPaymentAssets,
   getAdminProducts,
   getAdminUsers,
   rejectAdminWalletDeposit,
-  rejectAdminWalletWithdrawal,
   setAdminOrderStatus,
   updateAdminPaymentAsset,
   updateAdminProduct,
   updateAdminUser,
 } from "@/lib/services/admin";
-import type { ApiUser, DepositRequest, Order, PaymentAsset, Product, WithdrawalRequest } from "@/types";
+import type { ApiUser, DepositRequest, Order, PaymentAsset, Product } from "@/types";
 
 function StatusPill({ value }: { value: string }) {
   return (
@@ -47,13 +43,12 @@ export function AdminDashboardClient() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [users, setUsers] = useState<ApiUser[]>([]);
   const [deposits, setDeposits] = useState<DepositRequest[]>([]);
-  const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
+  const [withdrawals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [depositNotes, setDepositNotes] = useState<Record<number, string>>({});
-  const [withdrawalNotes, setWithdrawalNotes] = useState<Record<number, string>>({});
   const [productForm, setProductForm] = useState({
     id: "",
     title: "",
@@ -99,20 +94,18 @@ export function AdminDashboardClient() {
     const load = async () => {
       setLoading(true);
       try {
-        const [productsRes, assetsRes, ordersRes, usersRes, depositsRes, withdrawalsRes] = await Promise.all([
+        const [productsRes, assetsRes, ordersRes, usersRes, depositsRes] = await Promise.all([
           getAdminProducts(),
           getAdminPaymentAssets(),
           getAdminOrders(),
           getAdminUsers(),
           getAdminWalletDeposits(),
-          getAdminWalletWithdrawals(),
         ]);
         setProducts(productsRes);
         setPaymentAssets(assetsRes);
         setOrders(ordersRes);
         setUsers(usersRes);
         setDeposits(depositsRes);
-        setWithdrawals(withdrawalsRes);
       } catch {
         setError("Unable to load admin workspace.");
       } finally {
@@ -129,10 +122,9 @@ export function AdminDashboardClient() {
       { label: "Payment Assets", value: paymentAssets.length },
       { label: "Pending Orders", value: orders.filter((order) => order.status !== "paid").length },
       { label: "Pending Deposits", value: deposits.filter((deposit) => deposit.status === "pending").length },
-      { label: "Pending Withdrawals", value: withdrawals.filter((withdrawal) => withdrawal.status === "pending").length },
       { label: "Users", value: users.length },
     ],
-    [orders, paymentAssets.length, products.length, users.length, deposits, withdrawals],
+    [orders, paymentAssets.length, products.length, users.length, deposits],
   );
 
   if (!hasBootstrapped || loading) {
@@ -682,7 +674,7 @@ export function AdminDashboardClient() {
       ) : null}
 
       {tab === "wallet" ? (
-        <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+        <div className="grid gap-6">
           <section className="rounded-[1.75rem] border border-border bg-card/90 p-5 shadow-[var(--shadow-soft)]">
             <div className="flex items-center justify-between">
               <div>
@@ -762,101 +754,6 @@ export function AdminDashboardClient() {
                 ))
               )}
             </div>
-          </section>
-
-          <section className="rounded-[1.75rem] border border-border bg-card/90 p-5 shadow-[var(--shadow-soft)]">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-muted">Withdrawals</p>
-                <h2 className="mt-2 text-xl font-semibold">Withdrawal review queue</h2>
-              </div>
-              <div className="rounded-2xl bg-accent p-3 text-primary">
-                <Wallet2 className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-5 grid gap-4">
-              {withdrawals.length === 0 ? (
-                <div className="rounded-2xl border border-border bg-bg/60 p-4 text-sm text-muted">
-                  No withdrawal requests yet.
-                </div>
-              ) : (
-                withdrawals.map((withdrawal) => (
-                  <article key={withdrawal.id} className="rounded-3xl border border-border bg-bg/50 p-4">
-                    <div className="flex flex-col gap-4">
-                      <div>
-                        <StatusPill value={withdrawal.status} />
-                        <h3 className="mt-3 text-lg font-semibold">${withdrawal.amount.toFixed(2)} withdrawal</h3>
-                        <p className="mt-1 text-sm text-muted">
-                          {withdrawal.network} • {withdrawal.destination_address}
-                        </p>
-                      </div>
-                      <label className="space-y-2 text-xs font-semibold uppercase tracking-[0.22em] text-muted">
-                        <span>Admin note (optional)</span>
-                        <input
-                          value={withdrawalNotes[withdrawal.id] ?? ""}
-                          onChange={(event) =>
-                            setWithdrawalNotes((current) => ({ ...current, [withdrawal.id]: event.target.value }))
-                          }
-                          className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 text-sm font-medium normal-case text-foreground outline-none focus:border-primary"
-                          placeholder="Add a note for the customer"
-                        />
-                      </label>
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const updated = await approveAdminWalletWithdrawal(
-                              withdrawal.id,
-                              withdrawalNotes[withdrawal.id] ?? "",
-                            );
-                            setWithdrawals((current) =>
-                              current.map((item) => (item.id === updated.id ? updated : item)),
-                            );
-                            toast.success("Withdrawal approved.");
-                          }}
-                          className="rounded-full bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const updated = await completeAdminWalletWithdrawal(
-                              withdrawal.id,
-                              withdrawalNotes[withdrawal.id] ?? "",
-                            );
-                            setWithdrawals((current) =>
-                              current.map((item) => (item.id === updated.id ? updated : item)),
-                            );
-                            toast.success("Withdrawal completed.");
-                          }}
-                          className="rounded-full border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted"
-                        >
-                          Mark completed
-                        </button>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const updated = await rejectAdminWalletWithdrawal(
-                              withdrawal.id,
-                              withdrawalNotes[withdrawal.id] ?? "",
-                            );
-                            setWithdrawals((current) =>
-                              current.map((item) => (item.id === updated.id ? updated : item)),
-                            );
-                            toast.success("Withdrawal rejected.");
-                          }}
-                          className="rounded-full border border-rose-300 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-rose-600"
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                ))
-              )}
-            </div>
-          </section>
         </div>
       ) : null}
 

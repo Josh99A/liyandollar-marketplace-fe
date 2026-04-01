@@ -4,7 +4,6 @@ import type {
   WalletAsset,
   WalletSummary,
   WalletTransactionLog,
-  WithdrawalRequest,
 } from "@/types";
 
 type WalletSummaryResponse = {
@@ -58,29 +57,6 @@ export async function getDepositRequests() {
 
 export async function getDepositRequest(id: number) {
   const response = await apiClient.get<DepositRequest>(`/api/wallet/deposits/${id}/`);
-  return {
-    ...response.data,
-    amount: Number(response.data.amount),
-  };
-}
-
-export async function createWithdrawalRequest(payload: FormData) {
-  const response = await apiClient.post<WithdrawalRequest>("/api/wallet/withdrawals/", payload, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-  return response.data;
-}
-
-export async function getWithdrawalRequests() {
-  const response = await apiClient.get<WithdrawalRequest[]>("/api/wallet/withdrawals/");
-  return response.data.map((withdrawal) => ({
-    ...withdrawal,
-    amount: Number(withdrawal.amount),
-  }));
-}
-
-export async function getWithdrawalRequest(id: number) {
-  const response = await apiClient.get<WithdrawalRequest>(`/api/wallet/withdrawals/${id}/`);
   return {
     ...response.data,
     amount: Number(response.data.amount),

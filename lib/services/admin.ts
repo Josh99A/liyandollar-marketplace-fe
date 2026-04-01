@@ -5,7 +5,6 @@ import type {
   Order,
   PaymentAsset,
   Product,
-  WithdrawalRequest,
 } from "@/types";
 
 type AdminProductApi = {
@@ -235,43 +234,4 @@ export async function rejectAdminWalletDeposit(id: number, admin_note = "") {
   };
 }
 
-export async function getAdminWalletWithdrawals() {
-  const response = await apiClient.get<WithdrawalRequest[]>("/api/admin/wallet-withdrawals/");
-  return response.data.map((withdrawal) => ({
-    ...withdrawal,
-    amount: Number(withdrawal.amount),
-  }));
-}
-
-export async function approveAdminWalletWithdrawal(id: number, admin_note = "") {
-  const response = await apiClient.post<WithdrawalRequest>(
-    `/api/admin/wallet-withdrawals/${id}/approve/`,
-    { admin_note },
-  );
-  return {
-    ...response.data,
-    amount: Number(response.data.amount),
-  };
-}
-
-export async function completeAdminWalletWithdrawal(id: number, admin_note = "") {
-  const response = await apiClient.post<WithdrawalRequest>(
-    `/api/admin/wallet-withdrawals/${id}/complete/`,
-    { admin_note },
-  );
-  return {
-    ...response.data,
-    amount: Number(response.data.amount),
-  };
-}
-
-export async function rejectAdminWalletWithdrawal(id: number, admin_note = "") {
-  const response = await apiClient.post<WithdrawalRequest>(
-    `/api/admin/wallet-withdrawals/${id}/reject/`,
-    { admin_note },
-  );
-  return {
-    ...response.data,
-    amount: Number(response.data.amount),
-  };
-}
+// Withdrawal admin workflow removed.

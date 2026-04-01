@@ -1,6 +1,5 @@
 import {
   ArrowDownLeft,
-  ArrowUpRight,
   LifeBuoy,
   LayoutDashboard,
   Receipt,
@@ -23,7 +22,6 @@ export const primaryNav: DashboardNavItem[] = [
 export const walletNav: DashboardNavItem[] = [
   { href: "/dashboard/wallet", label: "Wallet", icon: Wallet, matchPrefix: "/dashboard/wallet" },
   { href: "/dashboard/wallet/deposit", label: "Deposits", icon: ArrowDownLeft },
-  { href: "/dashboard/wallet/withdraw", label: "Withdrawals", icon: ArrowUpRight },
   { href: "/dashboard/wallet/logs", label: "Transactions", icon: ScrollText },
 ];
 

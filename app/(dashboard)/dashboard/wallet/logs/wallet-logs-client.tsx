@@ -3,15 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { LoaderCircle } from "lucide-react";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { getDepositRequests, getWithdrawalRequests, getWalletTransactions } from "@/lib/services/wallet";
-import type { DepositRequest, WalletTransactionLog, WithdrawalRequest } from "@/types";
+import { getDepositRequests, getWalletTransactions } from "@/lib/services/wallet";
+import type { DepositRequest, WalletTransactionLog } from "@/types";
 
-type Tab = "deposits" | "withdrawals" | "transactions";
+type Tab = "deposits" | "transactions";
 
 export function WalletLogsClient() {
   const [tab, setTab] = useState<Tab>("transactions");
   const [deposits, setDeposits] = useState<DepositRequest[]>([]);
-  const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
   const [transactions, setTransactions] = useState<WalletTransactionLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,13 +20,11 @@ export function WalletLogsClient() {
       setLoading(true);
       setError(null);
       try {
-        const [deps, withs, logs] = await Promise.all([
+        const [deps, logs] = await Promise.all([
           getDepositRequests(),
-          getWithdrawalRequests(),
           getWalletTransactions(),
         ]);
         setDeposits(deps);
-        setWithdrawals(withs);
         setTransactions(logs);
       } catch {
         setError("Unable to load wallet logs.");
@@ -42,7 +39,6 @@ export function WalletLogsClient() {
     () => [
       { id: "transactions" as const, label: "All transactions" },
       { id: "deposits" as const, label: "Deposits" },
-      { id: "withdrawals" as const, label: "Withdrawals" },
     ],
     [],
   );
@@ -95,29 +91,6 @@ export function WalletLogsClient() {
                 </p>
                 {deposit.admin_note ? (
                   <p className="mt-2 text-sm text-muted">Admin note: {deposit.admin_note}</p>
-                ) : null}
-              </div>
-            ))
-          )}
-        </div>
-      ) : tab === "withdrawals" ? (
-        <div className="space-y-4">
-          {withdrawals.length === 0 ? (
-            <div className="rounded-[1.75rem] border border-border bg-card/90 p-6 text-sm text-muted">
-              No withdrawal requests yet.
-            </div>
-          ) : (
-            withdrawals.map((withdrawal) => (
-              <div key={withdrawal.id} className="rounded-3xl border border-border bg-bg/65 p-4">
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
-                  {withdrawal.network}
-                </p>
-                <p className="mt-2 text-lg font-semibold">${withdrawal.amount.toFixed(2)}</p>
-                <p className="text-sm text-muted">
-                  {withdrawal.created_at} • {withdrawal.status}
-                </p>
-                {withdrawal.admin_note ? (
-                  <p className="mt-2 text-sm text-muted">Admin note: {withdrawal.admin_note}</p>
                 ) : null}
               </div>
             ))

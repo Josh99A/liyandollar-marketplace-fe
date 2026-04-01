@@ -52,12 +52,6 @@ export function WalletClient() {
           Deposit
         </Link>
         <Link
-          href="/dashboard/wallet/withdraw"
-          className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-3 text-sm font-semibold"
-        >
-          Withdraw
-        </Link>
-        <Link
           href="/dashboard/wallet/logs"
           className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-3 text-sm font-semibold"
         >
