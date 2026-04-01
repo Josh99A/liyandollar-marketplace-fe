@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/stores/use-auth-store";
 
@@ -22,6 +23,8 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
     password: "",
     confirmPassword: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (key: keyof typeof form, value: string) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -71,7 +74,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       }
       toast.success(isRegister ? "Account created. Welcome!" : "Welcome back.");
     } catch (error) {
-      const fallback = "We couldn’t sign you in. Please check your details and try again.";
+      const fallback = "We couldn't sign you in. Please check your details and try again.";
       const rawMessage =
         typeof error === "object" && error && "response" in error
           ? (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? fallback
@@ -79,7 +82,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       const normalized = rawMessage.toLowerCase();
       const message =
         normalized.includes("pending") || normalized.includes("approval")
-          ? "Your account is pending admin approval. We’ll notify you once it’s approved."
+          ? "Your account is pending admin approval. We'll notify you once it's approved."
           : rawMessage;
       setError(message);
       toast.error(message);
@@ -133,26 +136,46 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       </label>
       <label className="space-y-2 text-sm font-medium">
         <span>Password</span>
-        <input
-          type="password"
-          value={form.password}
-          onChange={(event) => handleChange("password", event.target.value)}
-          className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none placeholder:text-muted/70 focus:border-primary"
-          placeholder="••••••••"
-        />
+        <div className="relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            value={form.password}
+            onChange={(event) => handleChange("password", event.target.value)}
+            className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 pr-12 outline-none placeholder:text-muted/70 focus:border-primary"
+            placeholder="********"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((value) => !value)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </label>
       {isRegister ? (
         <label className="space-y-2 text-sm font-medium">
           <span>Confirm password</span>
-          <input
-            type="password"
-            value={form.confirmPassword}
-            onChange={(event) =>
-              handleChange("confirmPassword", event.target.value)
-            }
-            className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none placeholder:text-muted/70 focus:border-primary"
-            placeholder="••••••••"
-          />
+          <div className="relative">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              value={form.confirmPassword}
+              onChange={(event) =>
+                handleChange("confirmPassword", event.target.value)
+              }
+              className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 pr-12 outline-none placeholder:text-muted/70 focus:border-primary"
+              placeholder="********"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((value) => !value)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted"
+              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+            >
+              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
         </label>
       ) : null}
       {error ? (
