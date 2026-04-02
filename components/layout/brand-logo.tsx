@@ -3,16 +3,22 @@ import Link from "next/link";
 import { cn } from "@/lib/utils/cn";
 
 export function BrandLogo({
+  ariaLabel,
   className,
   imageClassName,
   priority = false,
 }: {
+  ariaLabel?: string;
   className?: string;
   imageClassName?: string;
   priority?: boolean;
 }) {
   return (
-    <Link href="/" className={cn("inline-flex items-center overflow-hidden", className)}>
+    <Link
+      href="/"
+      aria-label={ariaLabel}
+      className={cn("inline-flex items-center overflow-hidden", className)}
+    >
       <Image
         src="/liyandollar-logo.png"
         alt="LiyanDollar Marketplace"
