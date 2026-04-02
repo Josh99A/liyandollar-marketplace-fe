@@ -19,7 +19,7 @@ export function DashboardSidebar() {
   ];
 
   return (
-    <aside className="hidden w-72 shrink-0 flex-col rounded-[2rem] border border-border bg-card/90 p-5 shadow-[var(--shadow-soft)] md:sticky md:top-24 md:h-[calc(100vh-8rem)] md:flex">
+    <aside className="hidden w-72 shrink-0 flex-col rounded-[2rem] border border-border bg-card/90 p-5 shadow-[var(--shadow-soft)] md:sticky md:top-10 md:h-[calc(100vh-4.5rem)] md:flex">
       <div className="flex items-center justify-between">
         <BrandLogo className="w-fit rounded-2xl bg-card px-3 py-2 shadow-[0_12px_32px_rgba(7,43,75,0.12)]" />
         <span className="rounded-full border border-border bg-bg/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.28em] text-muted">

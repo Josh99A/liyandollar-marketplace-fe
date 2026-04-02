@@ -6,6 +6,9 @@ type ProductApiResponse = {
   title: string;
   slug: string;
   category: string;
+  subcategory?: string;
+  category_icon?: string | null;
+  subcategory_icon?: string | null;
   description: string;
   image: string | null;
   price_usd: string;
@@ -29,6 +32,9 @@ function mapProduct(product: ProductApiResponse, index = 0): Product {
     slug: product.slug,
     name: product.title,
     category: product.category,
+    subcategory: product.subcategory ?? undefined,
+    categoryIcon: product.category_icon ?? null,
+    subcategoryIcon: product.subcategory_icon ?? null,
     description: product.description,
     longDescription: product.description,
     image: product.image,

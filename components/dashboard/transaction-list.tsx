@@ -43,7 +43,7 @@ export function TransactionList({
                 <div>
                   <p className="font-semibold">{title}</p>
                   <p className="text-sm text-muted">
-                    {transaction.created_at} • {transaction.status}
+                    {transaction.created_at} | {transaction.status}
                   </p>
                   {transaction.description ? (
                     <p className="mt-1 text-xs text-muted">{transaction.description}</p>

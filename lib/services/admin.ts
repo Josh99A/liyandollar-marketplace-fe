@@ -12,9 +12,13 @@ type AdminProductApi = {
   title: string;
   slug: string;
   category: string;
+  subcategory?: string;
+  category_icon?: string | null;
+  subcategory_icon?: string | null;
   description: string;
   image: string | null;
   price_usd: string | number;
+  rating?: string | number;
   status: string;
   stock_count: number;
   single_item: boolean;
@@ -47,11 +51,14 @@ function mapProduct(product: AdminProductApi, index = 0): Product {
     slug: product.slug,
     name: product.title,
     category: product.category,
+    subcategory: product.subcategory ?? undefined,
+    categoryIcon: product.category_icon ?? null,
+    subcategoryIcon: product.subcategory_icon ?? null,
     description: product.description,
     longDescription: product.description,
     image: product.image,
     price: Number(product.price_usd),
-    rating: 4.8,
+    rating: product.rating !== undefined ? Number(product.rating) : 4.8,
     stockStatus: `${product.status} (${product.stock_count})`,
     statusValue: product.status,
     stockCount: product.stock_count,
@@ -85,8 +92,12 @@ export async function createAdminProduct(payload: {
   title: string;
   slug: string;
   category: string;
+  subcategory?: string;
+  category_icon?: File | null;
+  subcategory_icon?: File | null;
   description: string;
   price_usd: number;
+  rating?: number;
   status: string;
   stock_count: number;
   single_item: boolean;
@@ -97,8 +108,20 @@ export async function createAdminProduct(payload: {
   formData.append("title", payload.title);
   formData.append("slug", payload.slug);
   formData.append("category", payload.category);
+  if (payload.subcategory) {
+    formData.append("subcategory", payload.subcategory);
+  }
+  if (payload.category_icon) {
+    formData.append("category_icon", payload.category_icon);
+  }
+  if (payload.subcategory_icon) {
+    formData.append("subcategory_icon", payload.subcategory_icon);
+  }
   formData.append("description", payload.description);
   formData.append("price_usd", String(payload.price_usd));
+  if (payload.rating !== undefined) {
+    formData.append("rating", String(payload.rating));
+  }
   formData.append("status", payload.status);
   formData.append("stock_count", String(payload.stock_count));
   formData.append("single_item", String(payload.single_item));
@@ -118,8 +141,12 @@ export async function updateAdminProduct(
     title: string;
     slug: string;
     category: string;
+    subcategory?: string;
+    category_icon?: File | null;
+    subcategory_icon?: File | null;
     description: string;
     price_usd: number;
+    rating?: number;
     status: string;
     stock_count: number;
     single_item: boolean;
@@ -131,8 +158,18 @@ export async function updateAdminProduct(
   formData.append("title", payload.title);
   formData.append("slug", payload.slug);
   formData.append("category", payload.category);
+  formData.append("subcategory", payload.subcategory ?? "");
+  if (payload.category_icon) {
+    formData.append("category_icon", payload.category_icon);
+  }
+  if (payload.subcategory_icon) {
+    formData.append("subcategory_icon", payload.subcategory_icon);
+  }
   formData.append("description", payload.description);
   formData.append("price_usd", String(payload.price_usd));
+  if (payload.rating !== undefined) {
+    formData.append("rating", String(payload.rating));
+  }
   formData.append("status", payload.status);
   formData.append("stock_count", String(payload.stock_count));
   formData.append("single_item", String(payload.single_item));

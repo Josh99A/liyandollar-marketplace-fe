@@ -3,9 +3,22 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ImageIcon, LoaderCircle, Shield, Trash2, Users, Wallet2 } from "lucide-react";
+import {
+  BadgeCheck,
+  Gift,
+  Globe,
+  ImageIcon,
+  LoaderCircle,
+  Mail,
+  Shield,
+  Store,
+  Trash2,
+  Users,
+  Wallet2,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { AssetIcon } from "@/components/ui/crypto-icon";
 import { useAuthStore } from "@/stores/use-auth-store";
 import {
   confirmAdminWalletDeposit,
@@ -26,12 +39,92 @@ import {
 } from "@/lib/services/admin";
 import type { ApiUser, DepositRequest, Order, PaymentAsset, Product } from "@/types";
 
+const CATEGORY_OPTIONS = [
+  {
+    label: "Social Accounts",
+    description: "Facebook, Instagram, TikTok, X.",
+    icon: Users,
+    subcategories: [
+      { label: "Facebook", icon: Globe },
+      { label: "Instagram", icon: BadgeCheck },
+      { label: "Twitter/X", icon: Shield },
+      { label: "TikTok", icon: BadgeCheck },
+      { label: "LinkedIn", icon: Users },
+    ],
+  },
+  {
+    label: "Email Accounts",
+    description: "Gmail, Outlook, Yahoo.",
+    icon: Mail,
+    subcategories: [
+      { label: "Gmail", icon: Mail },
+      { label: "Outlook", icon: Mail },
+      { label: "Yahoo", icon: Mail },
+      { label: "Custom Domain", icon: Globe },
+    ],
+  },
+  {
+    label: "Gift Cards",
+    description: "US, UK, Australia, Hong Kong.",
+    icon: Gift,
+    subcategories: [
+      { label: "US", icon: Gift },
+      { label: "UK", icon: Gift },
+      { label: "Australia", icon: Gift },
+      { label: "Hong Kong", icon: Gift },
+    ],
+  },
+  {
+    label: "Other",
+    description: "Bundles, mixed assets.",
+    icon: Store,
+    subcategories: [
+      { label: "Mixed", icon: Store },
+      { label: "Bundles", icon: Store },
+    ],
+  },
+];
+
 function StatusPill({ value }: { value: string }) {
   return (
     <span className="inline-flex rounded-full bg-accent px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
       {value.replaceAll("_", " ")}
     </span>
   );
+}
+
+function formatErrorDetails(error: unknown) {
+  if (!error) return null;
+  if (error instanceof Error) {
+    return error.stack || error.message;
+  }
+  try {
+    return JSON.stringify(error, null, 2);
+  } catch {
+    return String(error);
+  }
+}
+
+function formatLastLogin(value?: string | null) {
+  if (!value) return "Never logged in";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Unknown";
+  return date.toLocaleString();
+}
+
+function getLoginStatusStyles(lastLogin?: string | null) {
+  if (!lastLogin) {
+    return "bg-slate-900/10 text-foreground border border-slate-500/30";
+  }
+  const date = new Date(lastLogin);
+  const diffMs = Date.now() - date.getTime();
+  if (diffMs < 1000 * 60 * 60 * 24) {
+    return "bg-emerald-500/15 text-foreground border border-emerald-500/30";
+  }
+  if (diffMs < 1000 * 60 * 60 * 24 * 7) {
+    return "bg-amber-500/15 text-foreground border border-amber-500/30";
+  }
+  return "bg-rose-500/15 text-foreground border border-rose-500/30";
 }
 
 export function AdminDashboardClient() {
@@ -48,20 +141,27 @@ export function AdminDashboardClient() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [depositNotes, setDepositNotes] = useState<Record<number, string>>({});
   const [productForm, setProductForm] = useState({
     id: "",
     title: "",
     slug: "",
     category: "",
+    subcategory: "",
     description: "",
     price_usd: 0,
+    rating: 4.8,
     status: "available",
     stock_count: 1,
     single_item: false,
     credentials_json: '{\n  "email": "",\n  "password": ""\n}',
     image: null as File | null,
+    category_icon: null as File | null,
+    subcategory_icon: null as File | null,
     existingImage: null as string | null,
+    existingCategoryIcon: null as string | null,
+    existingSubcategoryIcon: null as string | null,
   });
   const [assetForm, setAssetForm] = useState({
     id: "",
@@ -83,6 +183,28 @@ export function AdminDashboardClient() {
     is_staff: false,
     is_active: true,
   });
+  const [categoryIconPreview, setCategoryIconPreview] = useState<string | null>(null);
+  const [subcategoryIconPreview, setSubcategoryIconPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!productForm.category_icon) {
+      setCategoryIconPreview(productForm.existingCategoryIcon);
+      return;
+    }
+    const url = URL.createObjectURL(productForm.category_icon);
+    setCategoryIconPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [productForm.category_icon, productForm.existingCategoryIcon]);
+
+  useEffect(() => {
+    if (!productForm.subcategory_icon) {
+      setSubcategoryIconPreview(productForm.existingSubcategoryIcon);
+      return;
+    }
+    const url = URL.createObjectURL(productForm.subcategory_icon);
+    setSubcategoryIconPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [productForm.subcategory_icon, productForm.existingSubcategoryIcon]);
 
   useEffect(() => {
     if (!hasBootstrapped) return;
@@ -106,8 +228,9 @@ export function AdminDashboardClient() {
         setOrders(ordersRes);
         setUsers(usersRes);
         setDeposits(depositsRes);
-      } catch {
+      } catch (err) {
         setError("Unable to load admin workspace.");
+        setErrorDetails(formatErrorDetails(err));
       } finally {
         setLoading(false);
       }
@@ -126,6 +249,12 @@ export function AdminDashboardClient() {
     ],
     [orders, paymentAssets.length, products.length, users.length, deposits],
   );
+
+  const selectedCategory = useMemo(
+    () => CATEGORY_OPTIONS.find((item) => item.label === productForm.category),
+    [productForm.category],
+  );
+  const subcategoryOptions = selectedCategory?.subcategories ?? [];
 
   if (!hasBootstrapped || loading) {
     return (
@@ -146,14 +275,20 @@ export function AdminDashboardClient() {
       title: "",
       slug: "",
       category: "",
+      subcategory: "",
       description: "",
       price_usd: 0,
+      rating: 4.8,
       status: "available",
       stock_count: 1,
       single_item: false,
       credentials_json: '{\n  "email": "",\n  "password": ""\n}',
       image: null,
+      category_icon: null,
+      subcategory_icon: null,
       existingImage: null,
+      existingCategoryIcon: null,
+      existingSubcategoryIcon: null,
     });
 
   const resetAssetForm = () =>
@@ -183,18 +318,23 @@ export function AdminDashboardClient() {
   const saveProduct = async () => {
     setBusy(true);
     setError(null);
+    setErrorDetails(null);
     try {
       const payload = {
         title: productForm.title,
         slug: productForm.slug,
         category: productForm.category,
+        subcategory: productForm.subcategory || undefined,
         description: productForm.description,
         price_usd: productForm.price_usd,
+        rating: productForm.rating,
         status: productForm.status,
         stock_count: productForm.stock_count,
         single_item: productForm.single_item,
         credentials_data: JSON.parse(productForm.credentials_json),
         image: productForm.image,
+        category_icon: productForm.category_icon,
+        subcategory_icon: productForm.subcategory_icon,
       };
       const saved = productForm.id
         ? await updateAdminProduct(productForm.id, payload)
@@ -206,8 +346,9 @@ export function AdminDashboardClient() {
       setMessage("Product saved.");
       toast.success("Product saved.");
       resetProductForm();
-    } catch {
+    } catch (err) {
       setError("Unable to save product. Make sure the credentials JSON is valid.");
+      setErrorDetails(formatErrorDetails(err));
       toast.error("Unable to save product.");
     } finally {
       setBusy(false);
@@ -218,6 +359,7 @@ export function AdminDashboardClient() {
     if (!userForm.id) return;
     setBusy(true);
     setError(null);
+    setErrorDetails(null);
     try {
       const updated = await updateAdminUser(userForm.id, {
         username: userForm.username,
@@ -231,8 +373,9 @@ export function AdminDashboardClient() {
       setUserForm((current) => ({ ...current, ...updated }));
       setMessage("User updated.");
       toast.success("User updated.");
-    } catch {
+    } catch (err) {
       setError("Unable to update user.");
+      setErrorDetails(formatErrorDetails(err));
       toast.error("Unable to update user.");
     } finally {
       setBusy(false);
@@ -242,6 +385,7 @@ export function AdminDashboardClient() {
   const saveAsset = async () => {
     setBusy(true);
     setError(null);
+    setErrorDetails(null);
     try {
       const formData = new FormData();
       formData.append("method_type", "crypto");
@@ -266,8 +410,9 @@ export function AdminDashboardClient() {
       setMessage("Payment asset saved.");
       toast.success("Payment asset saved.");
       resetAssetForm();
-    } catch {
+    } catch (err) {
       setError("Unable to save payment asset.");
+      setErrorDetails(formatErrorDetails(err));
       toast.error("Unable to save payment asset.");
     } finally {
       setBusy(false);
@@ -311,7 +456,19 @@ export function AdminDashboardClient() {
       </div>
 
       {message ? <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-200">{message}</div> : null}
-      {error ? <div className="rounded-2xl border border-[var(--color-danger)]/30 bg-[var(--color-danger-soft)] p-4 text-sm text-[var(--color-danger)]">{error}</div> : null}
+      {error ? (
+        <div className="rounded-2xl border border-[var(--color-danger)]/30 bg-[var(--color-danger-soft)] p-4 text-sm text-[var(--color-danger)]">
+          <p>{error}</p>
+          {errorDetails ? (
+            <details className="mt-3 rounded-xl border border-[var(--color-danger)]/20 bg-white/60 p-3 text-xs text-slate-700">
+              <summary className="cursor-pointer font-semibold text-[var(--color-danger)]">
+                Debug details
+              </summary>
+              <pre className="mt-2 whitespace-pre-wrap">{errorDetails}</pre>
+            </details>
+          ) : null}
+        </div>
+      ) : null}
 
       {tab === "products" ? (
         <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
@@ -321,21 +478,142 @@ export function AdminDashboardClient() {
               {[
                 ["title", "Title"],
                 ["slug", "Slug"],
-                ["category", "Category"],
               ].map(([key, label]) => (
                 <label key={key} className="space-y-2 text-sm font-medium">
-                  <span>{label}</span>
+                  <span>
+                    {label}
+                    {key === "title" ? <span className="text-rose-500"> *</span> : null}
+                  </span>
                   <input
                     value={productForm[key as keyof typeof productForm] as string}
                     onChange={(event) =>
                       setProductForm((current) => ({ ...current, [key]: event.target.value }))
                     }
                     className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
+                    required={key === "title"}
                   />
                 </label>
               ))}
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold">
+                      Category<span className="text-rose-500"> *</span>
+                    </p>
+                    <p className="text-xs text-muted">Pick a core category or type a custom label.</p>
+                  </div>
+                  <span className="text-xs text-muted">Upload an icon below to override the default.</span>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {CATEGORY_OPTIONS.map(({ label, description, icon: Icon }) => {
+                    const active = productForm.category === label;
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() =>
+                          setProductForm((current) => ({
+                            ...current,
+                            category: label,
+                            subcategory: "",
+                          }))
+                        }
+                        className={`flex items-center gap-4 rounded-3xl border px-4 py-4 text-left text-sm font-semibold transition ${active ? "border-primary bg-accent/80 shadow-[var(--shadow-soft)]" : "border-border bg-bg/60 hover:border-primary/40"}`}
+                        aria-pressed={active}
+                      >
+                        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-card text-primary">
+                          {active && categoryIconPreview ? (
+                            <img
+                              src={categoryIconPreview}
+                              alt={`${label} icon`}
+                              className="h-9 w-9 rounded-xl object-cover"
+                            />
+                          ) : (
+                            <Icon className="h-6 w-6" />
+                          )}
+                        </span>
+                        <span>
+                          <span className="block text-sm font-semibold">{label}</span>
+                          <span className="block text-xs text-muted">{description}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <label className="space-y-2 text-sm font-medium">
+                  <span>
+                    Category label<span className="text-rose-500"> *</span>
+                  </span>
+                  <input
+                    value={productForm.category}
+                    onChange={(event) =>
+                      setProductForm((current) => ({ ...current, category: event.target.value }))
+                    }
+                    placeholder="Type a custom category if needed"
+                    className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
+                    required
+                  />
+                </label>
+              </div>
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold">Subcategory</p>
+                    <p className="text-xs text-muted">Refine the listing with a platform or region.</p>
+                  </div>
+                  <span className="text-xs text-muted">Upload a subcategory icon to override.</span>
+                </div>
+                {subcategoryOptions.length ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {subcategoryOptions.map(({ label, icon: Icon }) => {
+                      const active = productForm.subcategory === label;
+                      return (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() =>
+                            setProductForm((current) => ({ ...current, subcategory: label }))
+                          }
+                          className={`flex items-center gap-4 rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${active ? "border-primary bg-accent/80 shadow-[var(--shadow-soft)]" : "border-border bg-bg/60 hover:border-primary/40"}`}
+                          aria-pressed={active}
+                        >
+                          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-card text-primary">
+                            {active && subcategoryIconPreview ? (
+                              <img
+                                src={subcategoryIconPreview}
+                                alt={`${label} icon`}
+                                className="h-8 w-8 rounded-xl object-cover"
+                              />
+                            ) : (
+                              <Icon className="h-5 w-5" />
+                            )}
+                          </span>
+                          <span className="block text-sm font-semibold">{label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-border bg-bg/40 p-4 text-sm text-muted">
+                    Select a category to see recommended subcategories.
+                  </div>
+                )}
+                <label className="space-y-2 text-sm font-medium">
+                  <span>Subcategory label</span>
+                  <input
+                    value={productForm.subcategory}
+                    onChange={(event) =>
+                      setProductForm((current) => ({ ...current, subcategory: event.target.value }))
+                    }
+                    placeholder="Optional custom subcategory"
+                    className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
+                  />
+                </label>
+              </div>
               <label className="space-y-2 text-sm font-medium">
-                <span>Description</span>
+                <span>
+                  Description<span className="text-rose-500"> *</span>
+                </span>
                 <textarea
                   rows={4}
                   value={productForm.description}
@@ -343,6 +621,7 @@ export function AdminDashboardClient() {
                     setProductForm((current) => ({ ...current, description: event.target.value }))
                   }
                   className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
+                  required
                 />
               </label>
               <label className="space-y-2 text-sm font-medium">
@@ -379,9 +658,63 @@ export function AdminDashboardClient() {
                   </div>
                 )}
               </label>
-              <div className="grid gap-4 sm:grid-cols-3">
+              <label className="space-y-2 text-sm font-medium">
+                <span>Category icon (optional)</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) =>
+                    setProductForm((current) => ({
+                      ...current,
+                      category_icon: event.target.files?.[0] ?? null,
+                    }))
+                  }
+                  className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 text-sm outline-none focus:border-primary"
+                />
+                {productForm.existingCategoryIcon ? (
+                  <div className="flex items-center gap-3 rounded-2xl border border-border bg-bg/50 p-3">
+                    <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-border bg-card">
+                      <img
+                        src={productForm.existingCategoryIcon}
+                        alt="Category icon"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div className="text-xs text-muted">Uploaded category icon</div>
+                  </div>
+                ) : null}
+              </label>
+              <label className="space-y-2 text-sm font-medium">
+                <span>Subcategory icon (optional)</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) =>
+                    setProductForm((current) => ({
+                      ...current,
+                      subcategory_icon: event.target.files?.[0] ?? null,
+                    }))
+                  }
+                  className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 text-sm outline-none focus:border-primary"
+                />
+                {productForm.existingSubcategoryIcon ? (
+                  <div className="flex items-center gap-3 rounded-2xl border border-border bg-bg/50 p-3">
+                    <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-border bg-card">
+                      <img
+                        src={productForm.existingSubcategoryIcon}
+                        alt="Subcategory icon"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div className="text-xs text-muted">Uploaded subcategory icon</div>
+                  </div>
+                ) : null}
+              </label>
+              <div className="grid gap-4 sm:grid-cols-4">
                 <label className="space-y-2 text-sm font-medium">
-                  <span>Price USD</span>
+                  <span>
+                    Price USD<span className="text-rose-500"> *</span>
+                  </span>
                   <input
                     type="number"
                     value={productForm.price_usd}
@@ -389,16 +722,37 @@ export function AdminDashboardClient() {
                       setProductForm((current) => ({ ...current, price_usd: Number(event.target.value) }))
                     }
                     className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
+                    required
                   />
                 </label>
                 <label className="space-y-2 text-sm font-medium">
-                  <span>Status</span>
+                  <span>
+                    Rating<span className="text-rose-500"> *</span>
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={5}
+                    step={0.1}
+                    value={productForm.rating}
+                    onChange={(event) =>
+                      setProductForm((current) => ({ ...current, rating: Number(event.target.value) }))
+                    }
+                    className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
+                    required
+                  />
+                </label>
+                <label className="space-y-2 text-sm font-medium">
+                  <span>
+                    Status<span className="text-rose-500"> *</span>
+                  </span>
                   <select
                     value={productForm.status}
                     onChange={(event) =>
                       setProductForm((current) => ({ ...current, status: event.target.value }))
                     }
                     className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
+                    required
                   >
                     <option value="available">Available</option>
                     <option value="sold">Sold</option>
@@ -406,7 +760,9 @@ export function AdminDashboardClient() {
                   </select>
                 </label>
                 <label className="space-y-2 text-sm font-medium">
-                  <span>Stock</span>
+                  <span>
+                    Stock<span className="text-rose-500"> *</span>
+                  </span>
                   <input
                     type="number"
                     value={productForm.stock_count}
@@ -414,6 +770,7 @@ export function AdminDashboardClient() {
                       setProductForm((current) => ({ ...current, stock_count: Number(event.target.value) }))
                     }
                     className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
+                    required
                   />
                 </label>
               </div>
@@ -428,7 +785,12 @@ export function AdminDashboardClient() {
                 Single-item inventory
               </label>
               <label className="space-y-2 text-sm font-medium">
-                <span>Credentials JSON</span>
+                <span>
+                  Credentials JSON<span className="text-rose-500"> *</span>
+                </span>
+                <p className="text-xs text-muted">
+                  This is the secure account data delivered after payment confirmation and used in the PDF download.
+                </p>
                 <textarea
                   rows={8}
                   value={productForm.credentials_json}
@@ -436,6 +798,7 @@ export function AdminDashboardClient() {
                     setProductForm((current) => ({ ...current, credentials_json: event.target.value }))
                   }
                   className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 font-mono text-sm outline-none focus:border-primary"
+                  required
                 />
               </label>
               <div className="flex gap-3">
@@ -459,6 +822,12 @@ export function AdminDashboardClient() {
                       <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-border bg-card">
                         {product.image ? (
                           <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                        ) : product.subcategoryIcon || product.categoryIcon ? (
+                          <img
+                            src={product.subcategoryIcon ?? product.categoryIcon ?? ""}
+                            alt={`${product.name} icon`}
+                            className="h-full w-full object-cover"
+                          />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-primary">
                             <ImageIcon className="h-5 w-5" />
@@ -466,9 +835,11 @@ export function AdminDashboardClient() {
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-primary">{product.category}</p>
+                        <p className="text-sm font-semibold text-primary">
+                          {product.category}{product.subcategory ? ` | ${product.subcategory}` : ""}
+                        </p>
                         <h3 className="mt-1 text-lg font-semibold">{product.name}</h3>
-                        <p className="mt-2 text-sm text-muted">${product.price.toFixed(2)} • {product.stockStatus}</p>
+                        <p className="mt-2 text-sm text-muted">${product.price.toFixed(2)} | {product.stockStatus}</p>
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -480,20 +851,34 @@ export function AdminDashboardClient() {
                             title: product.name,
                             slug: product.slug,
                             category: product.category,
+                            subcategory: product.subcategory ?? "",
                             description: product.description,
                             price_usd: product.price,
+                            rating: product.rating ?? 4.8,
                             status: product.statusValue ?? "available",
                             stock_count: product.stockCount ?? 1,
                             single_item: product.singleItem ?? false,
                             credentials_json: JSON.stringify(product.credentialsData ?? {}, null, 2),
                             image: null,
+                            category_icon: null,
+                            subcategory_icon: null,
                             existingImage: product.image,
+                            existingCategoryIcon: product.categoryIcon ?? null,
+                            existingSubcategoryIcon: product.subcategoryIcon ?? null,
                           })
                         }
                         className="rounded-full border border-border px-4 py-2 text-sm font-semibold"
                       >
                         Edit
                       </button>
+                      <a
+                        href={`/marketplace/${product.slug}`}
+                        className="rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-primary"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        View
+                      </a>
                       <button
                         type="button"
                         onClick={async () => {
@@ -527,11 +912,15 @@ export function AdminDashboardClient() {
                 ["wallet_address", "Wallet address"],
               ].map(([key, label]) => (
                 <label key={key} className="space-y-2 text-sm font-medium">
-                  <span>{label}</span>
+                  <span>
+                    {label}
+                    <span className="text-rose-500"> *</span>
+                  </span>
                   <input
                     value={assetForm[key as keyof typeof assetForm] as string}
                     onChange={(event) => setAssetForm((current) => ({ ...current, [key]: event.target.value }))}
                     className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
+                    required
                   />
                 </label>
               ))}
@@ -589,10 +978,21 @@ export function AdminDashboardClient() {
               {paymentAssets.map((asset) => (
                 <article key={asset.id} className="rounded-3xl border border-border bg-bg/50 p-4">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-primary">{asset.symbol}</p>
-                      <h3 className="mt-1 text-lg font-semibold">{asset.name}</h3>
-                      <p className="mt-2 text-sm text-muted">{asset.network} • {asset.is_active ? "Active" : "Inactive"}</p>
+                    <div className="flex items-start gap-3">
+                      {asset.qr_code_image ? (
+                        <img
+                          src={asset.qr_code_image}
+                          alt={`${asset.name} QR`}
+                          className="h-12 w-12 rounded-2xl border border-border object-cover"
+                        />
+                      ) : (
+                        <AssetIcon symbol={asset.symbol} network={asset.network} size={48} />
+                      )}
+                      <div>
+                        <p className="text-sm font-semibold text-primary">{asset.symbol}</p>
+                        <h3 className="mt-1 text-lg font-semibold">{asset.name}</h3>
+                        <p className="mt-2 text-sm text-muted">{asset.network} | {asset.is_active ? "Active" : "Inactive"}</p>
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -646,7 +1046,7 @@ export function AdminDashboardClient() {
                     <StatusPill value={order.status} />
                     <h3 className="mt-3 text-lg font-semibold">{order.product.name}</h3>
                     <p className="mt-1 text-sm text-muted">
-                      {order.user ? `${order.user.username || order.user.email} • ` : ""}Ref: {order.reference}
+                      {order.user ? `${order.user.username || order.user.email} | ` : ""}Ref: {order.reference}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -698,7 +1098,7 @@ export function AdminDashboardClient() {
                         <StatusPill value={deposit.status} />
                         <h3 className="mt-3 text-lg font-semibold">${deposit.amount.toFixed(2)} deposit</h3>
                         <p className="mt-1 text-sm text-muted">
-                          {deposit.crypto_asset.name} • {deposit.crypto_asset.network}
+                          {deposit.crypto_asset.name} | {deposit.crypto_asset.network}
                         </p>
                         {deposit.tx_hash ? (
                           <p className="mt-2 text-xs text-muted">Tx hash: {deposit.tx_hash}</p>
@@ -771,11 +1171,17 @@ export function AdminDashboardClient() {
                 ["last_name", "Last name"],
               ].map(([key, label]) => (
                 <label key={key} className="space-y-2 text-sm font-medium">
-                  <span>{label}</span>
+                  <span>
+                    {label}
+                    {(key === "username" || key === "email") ? (
+                      <span className="text-rose-500"> *</span>
+                    ) : null}
+                  </span>
                   <input
                     value={userForm[key as keyof typeof userForm] as string}
                     onChange={(event) => setUserForm((current) => ({ ...current, [key]: event.target.value }))}
                     className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
+                    required={key === "username" || key === "email"}
                   />
                 </label>
               ))}
@@ -814,70 +1220,95 @@ export function AdminDashboardClient() {
           <section className="rounded-[1.75rem] border border-border bg-card/90 p-5 shadow-[var(--shadow-soft)]">
             <h2 className="text-xl font-semibold">User management</h2>
             <div className="mt-5 grid gap-4">
-              {users.map((managedUser) => (
-                <article key={managedUser.id} className="rounded-3xl border border-border bg-bg/50 p-4">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="rounded-2xl bg-accent p-3 text-primary">
-                        <Users className="h-4 w-4" />
+                {users.map((managedUser) => (
+                  <article key={managedUser.id} className="rounded-3xl border border-border bg-bg/50 p-4">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="flex items-start gap-3">
+                        <div className="rounded-2xl bg-accent p-3 text-primary">
+                          <Users className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold">{managedUser.username || managedUser.email}</h3>
+                          <p className="text-sm text-muted">
+                            {managedUser.first_name} {managedUser.last_name} | {managedUser.email}
+                          </p>
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${managedUser.is_staff ? "border-primary/30 bg-primary/15 text-foreground" : "border-amber-500/30 bg-amber-500/15 text-foreground"}`}>
+                              {managedUser.is_staff ? "Admin" : "Standard"}
+                            </span>
+                            <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${(managedUser.is_active ?? true) ? "border-emerald-500/30 bg-emerald-500/15 text-foreground" : "border-rose-500/30 bg-rose-500/15 text-foreground"}`}>
+                              {(managedUser.is_active ?? true) ? "Active" : "Deactivated"}
+                            </span>
+                            <span className={`rounded-full border px-3 py-1 text-xs font-semibold text-foreground ${getLoginStatusStyles(managedUser.last_login ?? null)}`}>
+                              Last login: {formatLastLogin(managedUser.last_login ?? null)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-lg font-semibold">{managedUser.username || managedUser.email}</h3>
-                        <p className="text-sm text-muted">{managedUser.first_name} {managedUser.last_name} • {managedUser.email}</p>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setUserForm({
+                              id: managedUser.id,
+                              username: managedUser.username,
+                              email: managedUser.email,
+                              first_name: managedUser.first_name,
+                              last_name: managedUser.last_name,
+                              is_staff: managedUser.is_staff,
+                              is_active: managedUser.is_active ?? true,
+                            })
+                          }
+                          className="rounded-full border border-border px-4 py-2 text-sm font-semibold"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const updated = await updateAdminUser(managedUser.id, {
+                              is_staff: !managedUser.is_staff,
+                            });
+                            setUsers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+                            if (userForm.id === updated.id) {
+                              setUserForm((current) => ({ ...current, is_staff: updated.is_staff }));
+                            }
+                            toast.success(managedUser.is_staff ? "Admin role removed." : "Admin role granted.");
+                          }}
+                          className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${
+                            managedUser.is_staff
+                              ? "bg-primary text-white"
+                              : "border border-amber-300/50 bg-amber-500/10 text-amber-700 dark:text-amber-200"
+                          }`}
+                          disabled={managedUser.id === user?.id}
+                          title={managedUser.id === user?.id ? "You cannot change your own admin role." : undefined}
+                        >
+                          <Shield className="h-4 w-4" />
+                          {managedUser.is_staff ? "Admin" : "Make admin"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const updated = await updateAdminUser(managedUser.id, {
+                              is_active: !(managedUser.is_active ?? true),
+                            });
+                            setUsers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+                            if (userForm.id === updated.id) {
+                              setUserForm((current) => ({ ...current, is_active: updated.is_active ?? true }));
+                            }
+                            toast.success((managedUser.is_active ?? true) ? "User deactivated." : "User activated.");
+                          }}
+                          className={`rounded-full px-4 py-2 text-sm font-semibold ${
+                            (managedUser.is_active ?? true)
+                              ? "border border-emerald-500/30 bg-emerald-500/15 text-foreground"
+                              : "border border-rose-500/30 bg-rose-500/15 text-foreground"
+                          }`}
+                          disabled={managedUser.id === user?.id}
+                          title={managedUser.id === user?.id ? "You cannot deactivate your own account." : undefined}
+                        >
+                          {(managedUser.is_active ?? true) ? "Deactivate" : "Activate"}
+                        </button>
                       </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setUserForm({
-                            id: managedUser.id,
-                            username: managedUser.username,
-                            email: managedUser.email,
-                            first_name: managedUser.first_name,
-                            last_name: managedUser.last_name,
-                            is_staff: managedUser.is_staff,
-                            is_active: managedUser.is_active ?? true,
-                          })
-                        }
-                        className="rounded-full border border-border px-4 py-2 text-sm font-semibold"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const updated = await updateAdminUser(managedUser.id, {
-                            is_staff: !managedUser.is_staff,
-                          });
-                          setUsers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
-                          if (userForm.id === updated.id) {
-                            setUserForm((current) => ({ ...current, is_staff: updated.is_staff }));
-                          }
-                          toast.success(managedUser.is_staff ? "Admin role removed." : "Admin role granted.");
-                        }}
-                        className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${managedUser.is_staff ? "bg-primary text-white" : "border border-border bg-card text-muted"}`}
-                      >
-                        <Shield className="h-4 w-4" />
-                        {managedUser.is_staff ? "Admin" : "Make admin"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const updated = await updateAdminUser(managedUser.id, {
-                            is_active: !(managedUser.is_active ?? true),
-                          });
-                          setUsers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
-                          if (userForm.id === updated.id) {
-                            setUserForm((current) => ({ ...current, is_active: updated.is_active ?? true }));
-                          }
-                          toast.success((managedUser.is_active ?? true) ? "User deactivated." : "User activated.");
-                        }}
-                        className={`rounded-full px-4 py-2 text-sm font-semibold ${(managedUser.is_active ?? true) ? "border border-border bg-card text-muted" : "bg-rose-500/12 text-rose-700 dark:text-rose-200"}`}
-                      >
-                        {(managedUser.is_active ?? true) ? "Deactivate" : "Activate"}
-                      </button>
-                    </div>
                   </div>
                 </article>
               ))}

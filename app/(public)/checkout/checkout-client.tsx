@@ -8,9 +8,11 @@ import toast from "react-hot-toast";
 import { CheckoutSummary } from "@/components/marketplace/checkout-summary";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { useAuthStore } from "@/stores/use-auth-store";
-import { createOrder, getPaymentDetails, selectPaymentAsset, submitPayment } from "@/lib/services/orders";
+import { createOrder, getPaymentDetails, payOrderWithWallet, selectPaymentAsset, submitPayment } from "@/lib/services/orders";
 import { getPaymentAssets } from "@/lib/services/payments";
 import { getProductBySlugClient } from "@/lib/services/products";
+import { getWallet } from "@/lib/services/wallet";
+import { AssetIcon } from "@/components/ui/crypto-icon";
 import type { Order, PaymentAsset, PaymentDetailsResponse, Product } from "@/types";
 
 function StatusBadge({ status }: { status: string }) {
@@ -41,6 +43,8 @@ export function CheckoutClient({ slug }: { slug: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [walletLoading, setWalletLoading] = useState(false);
   const [form, setForm] = useState({
     tx_hash: "",
     sender_wallet_address: "",
@@ -69,6 +73,22 @@ export function CheckoutClient({ slug }: { slug: string }) {
     void load();
   }, [slug]);
 
+  useEffect(() => {
+    if (!hasBootstrapped || !user) return;
+    const loadWallet = async () => {
+      setWalletLoading(true);
+      try {
+        const wallet = await getWallet();
+        setWalletBalance(wallet.balance);
+      } catch (err) {
+        console.error("Failed to load wallet balance", err);
+      } finally {
+        setWalletLoading(false);
+      }
+    };
+    void loadWallet();
+  }, [hasBootstrapped, user]);
+
   const selectedAssetId = order?.selected_payment_asset?.id ?? null;
   const selectedAsset = useMemo(
     () => assets.find((asset) => asset.id === selectedAssetId) ?? null,
@@ -89,6 +109,29 @@ export function CheckoutClient({ slug }: { slug: string }) {
       console.error("Failed to create order", err);
       setError("We could not create the order. Make sure you are signed in and try again.");
       toast.error("Unable to create order.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handlePayWithWallet = async () => {
+    if (!product) return;
+    setSubmitting(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const created = order ?? (await createOrder(product.id));
+      const paid = await payOrderWithWallet(created.id);
+      setOrder(paid);
+      setPaymentDetails(null);
+      setMessage("Paid with wallet balance. Credentials are now available in your orders.");
+      const wallet = await getWallet();
+      setWalletBalance(wallet.balance);
+      toast.success("Wallet payment successful.");
+    } catch (err) {
+      console.error("Failed wallet payment", err);
+      setError("Unable to pay with wallet balance.");
+      toast.error("Wallet payment failed.");
     } finally {
       setSubmitting(false);
     }
@@ -199,6 +242,28 @@ export function CheckoutClient({ slug }: { slug: string }) {
               <p className="text-sm leading-7 text-muted">
                 Create a pending order first. After that you can pick a crypto asset and receive wallet instructions plus the order reference.
               </p>
+              {user ? (
+                <div className="mt-4 rounded-2xl border border-border bg-card/70 p-4 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted">Wallet balance</span>
+                    <span className="text-base font-semibold">
+                      {walletBalance === null ? "--" : `$${walletBalance.toFixed(2)}`}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs text-muted">
+                    Pay instantly with your wallet balance or continue with crypto checkout.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handlePayWithWallet}
+                    disabled={submitting || walletBalance === null || walletBalance < (product?.price ?? 0)}
+                    className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border border-border bg-bg px-4 py-3 text-sm font-semibold disabled:opacity-60"
+                  >
+                    {walletLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
+                    Pay with wallet balance
+                  </button>
+                </div>
+              ) : null}
               <button
                 type="button"
                 onClick={handleCreateOrder}
@@ -210,6 +275,38 @@ export function CheckoutClient({ slug }: { slug: string }) {
             </div>
           ) : (
             <>
+              {user && walletBalance !== null ? (
+                <div className="mt-6 rounded-[1.5rem] border border-border bg-card/70 p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                        Wallet payment
+                      </p>
+                      <p className="mt-2 text-sm text-muted">
+                        Available balance: ${walletBalance.toFixed(2)}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handlePayWithWallet}
+                      disabled={submitting || walletBalance < product.price}
+                      className="inline-flex items-center gap-2 rounded-full border border-border bg-bg px-4 py-2 text-sm font-semibold disabled:opacity-60"
+                    >
+                      {walletLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
+                      Pay with wallet
+                    </button>
+                  </div>
+                  {walletBalance < product.price ? (
+                    <p className="mt-2 text-xs text-muted">
+                      Add funds to your wallet to cover the ${product.price.toFixed(2)} purchase.
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-xs text-muted">
+                      Wallet payments confirm instantly and unlock credentials right away.
+                    </p>
+                  )}
+                </div>
+              ) : null}
               <div className="mt-6">
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">
                   Step 1
@@ -225,11 +322,24 @@ export function CheckoutClient({ slug }: { slug: string }) {
                         onClick={() => handleSelectAsset(asset.id)}
                         className={`rounded-3xl border p-4 text-left transition ${active ? "border-primary bg-accent/80 shadow-lg" : "border-border bg-bg/65 hover:border-primary/40"}`}
                       >
-                        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
-                          {asset.symbol}
-                        </p>
-                        <h4 className="mt-2 text-lg font-semibold">{asset.name}</h4>
-                        <p className="mt-1 text-sm text-muted">{asset.network}</p>
+                        <div className="flex items-center gap-3">
+                          {asset.qr_code_image ? (
+                            <img
+                              src={asset.qr_code_image}
+                              alt={`${asset.name} QR`}
+                              className="h-10 w-10 rounded-2xl border border-border object-cover"
+                            />
+                          ) : (
+                            <AssetIcon symbol={asset.symbol} network={asset.network} size={40} />
+                          )}
+                          <div>
+                            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
+                              {asset.symbol}
+                            </p>
+                            <h4 className="mt-2 text-lg font-semibold">{asset.name}</h4>
+                            <p className="mt-1 text-sm text-muted">{asset.network}</p>
+                          </div>
+                        </div>
                         <p className="mt-3 text-xs leading-6 text-muted">
                           {asset.instructions || "Admin-configured manual settlement instructions."}
                         </p>

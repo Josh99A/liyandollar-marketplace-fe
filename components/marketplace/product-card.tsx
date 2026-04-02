@@ -2,11 +2,47 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Camera, Gift, Mail, ShoppingBag, Star, UserRound } from "lucide-react";
-import { useMemo, useState } from "react";
-import type { Product } from "@/types";
-import type { PaymentAsset } from "@/types";
+import {
+  ArrowRight,
+  Camera,
+  CheckCircle2,
+  Copy,
+  Gift,
+  LoaderCircle,
+  Mail,
+  ShoppingBag,
+  Star,
+  UserRound,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import type {
+  CredentialsResponse,
+  Order,
+  PaymentAsset,
+  PaymentDetailsResponse,
+  Product,
+  WalletSummary,
+} from "@/types";
+import { useAuthStore } from "@/stores/use-auth-store";
 import { getPaymentAssets } from "@/lib/services/payments";
+import { AssetIcon } from "@/components/ui/crypto-icon";
+import {
+  createGuestOrder,
+  createOrder,
+  downloadCredentialsPdf,
+  downloadGuestCredentialsPdf,
+  getCredentials,
+  getGuestCredentials,
+  getGuestOrder,
+  getGuestPaymentDetails,
+  getOrder,
+  getPaymentDetails,
+  payOrderWithWallet,
+  selectPaymentAsset,
+  submitGuestPayment,
+  submitPayment,
+} from "@/lib/services/orders";
+import { getWallet } from "@/lib/services/wallet";
 import toast from "react-hot-toast";
 
 function ProductFallbackIcon({ category }: { category: string }) {
@@ -29,6 +65,7 @@ function ProductFallbackIcon({ category }: { category: string }) {
 }
 
 export function ProductCard({ product }: { product: Product }) {
+  const { user, hasBootstrapped } = useAuthStore();
   const [open, setOpen] = useState(false);
   const [assets, setAssets] = useState<PaymentAsset[]>([]);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
@@ -36,10 +73,38 @@ export function ProductCard({ product }: { product: Product }) {
   const [loadingAssets, setLoadingAssets] = useState(false);
   const [assetError, setAssetError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [order, setOrder] = useState<Order | null>(null);
+  const [paymentDetails, setPaymentDetails] = useState<PaymentDetailsResponse | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [credentials, setCredentials] = useState<CredentialsResponse | null>(null);
+  const [walletSummary, setWalletSummary] = useState<WalletSummary | null>(null);
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [guestForm, setGuestForm] = useState({
+    name: "",
+    email: "",
+  });
+  const [proofForm, setProofForm] = useState({
+    tx_hash: "",
+    note: "",
+  });
 
   const openModal = async () => {
     setOpen(true);
-    if (assetsLoaded) return;
+    if (assetsLoaded) {
+      if (user && !walletSummary) {
+        setWalletLoading(true);
+        try {
+          const wallet = await getWallet();
+          setWalletSummary(wallet);
+        } catch {
+          setAssetError("Unable to load wallet balance.");
+        } finally {
+          setWalletLoading(false);
+        }
+      }
+      return;
+    }
     setLoadingAssets(true);
     setAssetError(null);
     try {
@@ -47,11 +112,17 @@ export function ProductCard({ product }: { product: Product }) {
       setAssets(data);
       setAssetsLoaded(true);
       setSelectedAssetId((current) => current ?? data[0]?.id ?? null);
+      if (user) {
+        setWalletLoading(true);
+        const wallet = await getWallet();
+        setWalletSummary(wallet);
+      }
     } catch {
       setAssetError("Unable to load payment assets. Please try again shortly.");
       toast.error("Unable to load payment assets.");
     } finally {
       setLoadingAssets(false);
+      setWalletLoading(false);
     }
   };
 
@@ -60,9 +131,168 @@ export function ProductCard({ product }: { product: Product }) {
     [assets, selectedAssetId],
   );
 
+  const closeModal = () => {
+    setOpen(false);
+    setOrder(null);
+    setPaymentDetails(null);
+    setMessage(null);
+    setCredentials(null);
+    setProofForm({ tx_hash: "", note: "" });
+    setGuestForm({ name: "", email: "" });
+    setSelectedAssetId((current) => current ?? assets[0]?.id ?? null);
+  };
+
+  const authReady = hasBootstrapped;
+  const isGuest = authReady && !user;
+  const guestEmailValid = !isGuest || /.+@.+\..+/.test(guestForm.email.trim());
+  const guestNameValid = !isGuest || guestForm.name.trim().length > 1;
+  const canSubmitOrder =
+    authReady && Boolean(selectedAssetId) && (!isGuest || (guestEmailValid && guestNameValid));
+  const walletBalance = walletSummary?.balance ?? 0;
+  const canPayWithWallet = Boolean(user && walletSummary && walletBalance >= product.price);
+
+  const handleCreateOrder = async () => {
+    if (!selectedAssetId) {
+      setAssetError("Select a payment method to continue.");
+      return;
+    }
+    setBusy(true);
+    setAssetError(null);
+    setMessage(null);
+    try {
+      if (user) {
+        const created = await createOrder(product.id);
+        const updated = await selectPaymentAsset(created.id, selectedAssetId);
+        const details = await getPaymentDetails(created.id);
+        setOrder(updated);
+        setPaymentDetails(details);
+        setMessage("Payment instructions ready. Send the exact amount and network.");
+      } else {
+        const created = await createGuestOrder({
+          productId: product.id,
+          guestName: guestForm.name.trim(),
+          guestEmail: guestForm.email.trim(),
+          paymentAssetId: selectedAssetId,
+        });
+        const details = await getGuestPaymentDetails(created.reference);
+        setOrder(created);
+        setPaymentDetails(details);
+        setMessage("Payment instructions ready. Save your order reference.");
+      }
+      toast.success("Payment instructions ready.");
+    } catch (err) {
+      console.error("Failed to create order", err);
+      setAssetError("Unable to create the order. Please try again.");
+      toast.error("Unable to create order.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleSubmitPayment = async () => {
+    if (!order) return;
+    setBusy(true);
+    setAssetError(null);
+    try {
+      const response = user
+        ? await submitPayment(order.id, {
+            tx_hash: proofForm.tx_hash,
+            note: proofForm.note,
+          })
+        : await submitGuestPayment(order.reference, {
+            tx_hash: proofForm.tx_hash,
+            note: proofForm.note,
+          });
+      setOrder(response.order);
+      setMessage(response.message);
+      toast.success("Payment submitted for confirmation.");
+    } catch (err) {
+      console.error("Payment submit failed", err);
+      setAssetError("Payment submission failed. Please try again.");
+      toast.error("Payment submission failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handlePayWithWallet = async () => {
+    if (!user) return;
+    setBusy(true);
+    setAssetError(null);
+    setMessage(null);
+    try {
+      const created = await createOrder(product.id);
+      const paidOrder = await payOrderWithWallet(created.id);
+      setOrder(paidOrder);
+      setPaymentDetails(null);
+      setMessage("Paid with wallet balance. Credentials are now available.");
+      toast.success("Wallet payment successful.");
+      const data = await getCredentials(paidOrder.id);
+      setCredentials(data);
+      const wallet = await getWallet();
+      setWalletSummary(wallet);
+    } catch (err) {
+      console.error("Failed to pay with wallet", err);
+      setAssetError("Unable to pay with wallet balance.");
+      toast.error("Wallet payment failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const refreshOrderStatus = async () => {
+    if (!order) return;
+    setBusy(true);
+    setAssetError(null);
+    try {
+      const refreshed = user ? await getOrder(order.id) : await getGuestOrder(order.reference);
+      setOrder(refreshed);
+      setMessage("Order status refreshed.");
+      toast.success("Order status refreshed.");
+    } catch (err) {
+      console.error("Failed to refresh order status", err);
+      setAssetError("Unable to refresh order status.");
+      toast.error("Unable to refresh status.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const loadCredentials = async () => {
+    if (!order) return;
+    try {
+      const data = user ? await getCredentials(order.id) : await getGuestCredentials(order.reference);
+      setCredentials(data);
+    } catch (err) {
+      console.error("Failed to load credentials", err);
+    }
+  };
+
+  useEffect(() => {
+    if (order?.status === "paid" && !credentials) {
+      void loadCredentials();
+    }
+  }, [credentials, order?.status]);
+
+  const handleDownloadPdf = async () => {
+    if (!order) return;
+    const blob = user
+      ? await downloadCredentialsPdf(order.id)
+      : await downloadGuestCredentialsPdf(order.reference);
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `order-${order.reference}-credentials.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
   const handleCopy = async () => {
-    if (!selectedAsset) return;
-    await navigator.clipboard.writeText(selectedAsset.wallet_address);
+    const address = paymentDetails?.asset.wallet_address ?? selectedAsset?.wallet_address;
+    if (!address) return;
+    await navigator.clipboard.writeText(address);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1800);
     toast.success("Wallet address copied.");
@@ -77,6 +307,13 @@ export function ProductCard({ product }: { product: Product }) {
           <img
             src={product.image}
             alt={product.name}
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+        ) : product.subcategoryIcon || product.categoryIcon ? (
+          <img
+            src={product.subcategoryIcon ?? product.categoryIcon ?? ""}
+            alt={`${product.name} icon`}
             className="h-full w-full object-cover"
             loading="lazy"
           />
@@ -136,11 +373,11 @@ export function ProductCard({ product }: { product: Product }) {
               </div>
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={closeModal}
                 className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg"
                 aria-label="Close payment modal"
               >
-                ×
+                X
               </button>
             </div>
 
@@ -153,68 +390,335 @@ export function ProductCard({ product }: { product: Product }) {
                 {assetError}
               </div>
             ) : (
-              <div className="mt-6 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-                <div className="grid gap-3">
-                  {assets.map((asset) => {
-                    const active = asset.id === selectedAssetId;
-                    return (
-                      <button
-                        key={asset.id}
-                        type="button"
-                        onClick={() => setSelectedAssetId(asset.id)}
-                        className={`rounded-3xl border p-4 text-left transition ${active ? "border-primary bg-accent/80 shadow-lg" : "border-border bg-bg/65 hover:border-primary/40"}`}
-                      >
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
-                          {asset.symbol}
-                        </p>
-                        <h3 className="mt-2 text-lg font-semibold">{asset.name}</h3>
-                        <p className="mt-1 text-sm text-muted">{asset.network}</p>
-                        <p className="mt-2 text-xs leading-6 text-muted">
-                          {asset.instructions || "Admin-configured manual settlement instructions."}
-                        </p>
-                      </button>
-                    );
-                  })}
-                </div>
+              <div className="mt-6 space-y-6">
+                {!paymentDetails ? (
+                  order?.status === "paid" ? (
+                    <div className="rounded-[1.75rem] border border-border bg-card/80 p-6">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                            Wallet payment confirmed
+                          </p>
+                          <h3 className="mt-2 text-xl font-semibold">Credentials are ready</h3>
+                          <p className="mt-2 text-sm text-muted">
+                            Your wallet balance covered the purchase. Download the PDF or copy credentials below.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleDownloadPdf}
+                          className="inline-flex items-center gap-2 rounded-full border border-border bg-bg px-4 py-2 text-sm font-semibold"
+                        >
+                          Download PDF
+                        </button>
+                      </div>
+                      {credentials ? (
+                        <div className="mt-5 space-y-2 rounded-2xl border border-border bg-bg/60 p-4 text-sm">
+                          {Object.entries(credentials.credentials).map(([key, value]) => (
+                            <div key={key} className="flex flex-wrap items-start justify-between gap-4">
+                              <span className="font-semibold">{key}</span>
+                              <span className="break-all font-mono text-muted">{value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={loadCredentials}
+                          className="mt-4 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-2 text-sm font-semibold"
+                        >
+                          Reveal credentials
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+                    <div className="rounded-3xl border border-border bg-bg/60 p-5">
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                        Buyer details
+                      </p>
+                      <h3 className="mt-2 text-xl font-semibold">Checkout form</h3>
+                      <p className="mt-2 text-sm text-muted">
+                        Guest orders use email for delivery updates. Your details are visible only to staff.
+                      </p>
+                      {!authReady ? (
+                        <div className="mt-4 rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted">
+                          Checking account session...
+                        </div>
+                      ) : isGuest ? (
+                        <div className="mt-4 grid gap-4">
+                          <label className="text-sm font-medium">
+                            Name
+                            <input
+                              value={guestForm.name}
+                              onChange={(event) =>
+                                setGuestForm((current) => ({ ...current, name: event.target.value }))
+                              }
+                              className="mt-2 w-full rounded-2xl border border-border bg-card/70 px-4 py-3 text-sm outline-none focus:border-primary"
+                              placeholder="Jane Doe"
+                            />
+                          </label>
+                          <label className="text-sm font-medium">
+                            Email
+                            <input
+                              value={guestForm.email}
+                              onChange={(event) =>
+                                setGuestForm((current) => ({ ...current, email: event.target.value }))
+                              }
+                              className="mt-2 w-full rounded-2xl border border-border bg-card/70 px-4 py-3 text-sm outline-none focus:border-primary"
+                              placeholder="jane@email.com"
+                              type="email"
+                            />
+                            {!guestEmailValid ? (
+                              <p className="mt-1 text-xs text-rose-500">Enter a valid email address.</p>
+                            ) : null}
+                          </label>
+                        </div>
+                      ) : (
+                        <div className="mt-4 rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted">
+                          Signed in as <span className="font-semibold text-foreground">{user?.username}</span>.
+                        </div>
+                      )}
+                      <div className="mt-5 rounded-2xl border border-dashed border-border bg-card/50 p-4 text-xs text-muted">
+                        You will receive a reference after payment instructions load. Keep it safe for support.
+                      </div>
+                    </div>
 
-                {selectedAsset ? (
-                  <div className="rounded-3xl border border-border bg-bg/60 p-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
-                      Wallet address
-                    </p>
-                    <p className="mt-3 break-all rounded-2xl border border-border bg-card/80 px-4 py-3 text-sm font-mono">
-                      {selectedAsset.wallet_address}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={handleCopy}
-                      className="mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-2 text-sm font-semibold"
-                    >
-                      {copied ? "Copied" : "Copy address"}
-                    </button>
+                    <div className="space-y-4">
+                      {user ? (
+                        <div className="rounded-3xl border border-border bg-bg/60 p-5">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                            Wallet balance
+                          </p>
+                          <div className="mt-3 flex items-center justify-between text-sm">
+                            <span className="text-muted">Available</span>
+                            <span className="text-lg font-semibold">${walletBalance.toFixed(2)}</span>
+                          </div>
+                          {walletLoading ? (
+                            <div className="mt-3 flex items-center gap-2 text-xs text-muted">
+                              <LoaderCircle className="h-4 w-4 animate-spin" />
+                              Loading wallet...
+                            </div>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={handlePayWithWallet}
+                            disabled={busy || !canPayWithWallet}
+                            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card/80 px-4 py-3 text-sm font-semibold disabled:opacity-60"
+                          >
+                            {busy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
+                            Pay with wallet balance
+                          </button>
+                          {!canPayWithWallet ? (
+                            <p className="mt-2 text-xs text-muted">
+                              Add funds to your wallet to pay instantly.
+                            </p>
+                          ) : (
+                            <p className="mt-2 text-xs text-muted">
+                              Wallet payments confirm instantly and unlock credentials right away.
+                            </p>
+                          )}
+                        </div>
+                      ) : null}
 
-                    <div className="mt-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                      <div className="rounded-3xl border border-border bg-bg/60 p-5">
+                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                          Payment methods
+                        </p>
+                        <div className="mt-4 grid gap-3">
+                          {assets.map((asset) => {
+                            const active = asset.id === selectedAssetId;
+                            return (
+                              <button
+                                key={asset.id}
+                                type="button"
+                                onClick={() => setSelectedAssetId(asset.id)}
+                                className={`rounded-3xl border p-4 text-left transition ${active ? "border-primary bg-accent/80 shadow-lg" : "border-border bg-bg/65 hover:border-primary/40"}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  {asset.qr_code_image ? (
+                                    <img
+                                      src={asset.qr_code_image}
+                                      alt={`${asset.name} QR`}
+                                      className="h-10 w-10 rounded-2xl border border-border object-cover"
+                                    />
+                                  ) : (
+                                    <AssetIcon symbol={asset.symbol} network={asset.network} size={40} />
+                                  )}
+                                  <div>
+                                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                                      {asset.symbol}
+                                    </p>
+                                    <h3 className="mt-2 text-lg font-semibold">{asset.name}</h3>
+                                    <p className="mt-1 text-sm text-muted">{asset.network}</p>
+                                  </div>
+                                </div>
+                                <p className="mt-2 text-xs leading-6 text-muted">
+                                  {asset.instructions || "Admin-configured manual settlement instructions."}
+                                </p>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleCreateOrder}
+                          disabled={busy || !canSubmitOrder}
+                          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                        >
+                          {busy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
+                          Buy it now
+                        </button>
+                        {isGuest ? (
+                          <p className="mt-3 text-xs text-muted">
+                            Guests will use the email above to receive updates after confirmation.
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                  )
+                ) : (
+                  <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+                    <div className="rounded-[1.75rem] border border-border bg-card/70 p-5">
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
                         QR code
                       </p>
-                      {selectedAsset.qr_code_image ? (
+                      {paymentDetails.asset.qr_code_image ? (
                         <img
-                          src={selectedAsset.qr_code_image}
-                          alt={`${selectedAsset.name} QR code`}
-                          className="mt-3 h-44 w-44 rounded-3xl border border-border object-cover"
+                          src={paymentDetails.asset.qr_code_image}
+                          alt={`${paymentDetails.asset.name} QR code`}
+                          className="mt-4 h-56 w-56 rounded-3xl border border-border object-cover"
                         />
                       ) : (
-                        <div className="mt-3 flex h-44 w-44 items-center justify-center rounded-3xl border border-dashed border-border text-sm text-muted">
+                        <div className="mt-4 flex h-56 w-56 items-center justify-center rounded-3xl border border-dashed border-border text-sm text-muted">
                           QR code not uploaded yet
                         </div>
                       )}
+                      <p className="mt-4 text-xs text-muted">
+                        Order reference: <span className="font-mono">{paymentDetails.reference}</span>
+                      </p>
                     </div>
 
-                    <p className="mt-5 text-sm leading-6 text-muted">
-                      Payments are manually confirmed by an admin. Credentials are released only after confirmation.
-                    </p>
+                    <div className="rounded-[1.75rem] border border-border bg-bg/60 p-5">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                          Payment details
+                        </p>
+                        {order ? (
+                          <span className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                            {order.status.replaceAll("_", " ")}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-4 space-y-4 text-sm">
+                        <div>
+                          <p className="text-xs text-muted">Amount</p>
+                          <p className="mt-1 text-lg font-semibold">${product.price.toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted">Send to</p>
+                          <div className="mt-2 flex items-center gap-2 rounded-2xl border border-border bg-card/70 px-4 py-3 text-xs font-mono">
+                            <span className="break-all">{paymentDetails.asset.wallet_address}</span>
+                            <button
+                              type="button"
+                              onClick={handleCopy}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-muted"
+                              aria-label="Copy wallet address"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
+                          </div>
+                          {copied ? <p className="mt-2 text-xs text-emerald-500">Copied to clipboard.</p> : null}
+                        </div>
+                      </div>
+                      <div className="mt-5 rounded-2xl border border-dashed border-border bg-card/50 p-4 text-xs text-muted">
+                        Send only on the listed network. Payments are confirmed manually by an admin.
+                      </div>
+                      <div className="mt-5 space-y-3">
+                        <label className="text-sm font-medium">
+                          Transaction hash (optional)
+                          <input
+                            value={proofForm.tx_hash}
+                            onChange={(event) =>
+                              setProofForm((current) => ({ ...current, tx_hash: event.target.value }))
+                            }
+                            className="mt-2 w-full rounded-2xl border border-border bg-card/70 px-4 py-3 text-sm outline-none focus:border-primary"
+                            placeholder="Paste transaction hash"
+                          />
+                        </label>
+                        <label className="text-sm font-medium">
+                          Note (optional)
+                          <textarea
+                            value={proofForm.note}
+                            onChange={(event) =>
+                              setProofForm((current) => ({ ...current, note: event.target.value }))
+                            }
+                            rows={3}
+                            className="mt-2 w-full rounded-2xl border border-border bg-card/70 px-4 py-3 text-sm outline-none focus:border-primary"
+                            placeholder="Any extra notes for review"
+                          />
+                        </label>
+                        <div className="flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            onClick={handleSubmitPayment}
+                            disabled={busy}
+                            className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                          >
+                            {busy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
+                            I have made payment
+                          </button>
+                          <button
+                            type="button"
+                            onClick={refreshOrderStatus}
+                            disabled={busy}
+                            className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-3 text-sm font-semibold"
+                          >
+                            Refresh status
+                          </button>
+                        </div>
+                      </div>
+                      {message ? (
+                        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-3 text-xs text-emerald-700 dark:text-emerald-200">
+                          <CheckCircle2 className="h-4 w-4" />
+                          {message}
+                        </div>
+                      ) : null}
+                      {order?.status === "paid" ? (
+                        <div className="mt-5 rounded-2xl border border-border bg-card/70 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-semibold">Credentials unlocked</p>
+                            <button
+                              type="button"
+                              onClick={handleDownloadPdf}
+                              className="inline-flex items-center gap-2 rounded-full border border-border bg-bg px-3 py-2 text-xs font-semibold"
+                            >
+                              Download PDF
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={loadCredentials}
+                            className="mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-bg px-3 py-2 text-xs font-semibold"
+                          >
+                            Reveal credentials
+                          </button>
+                          {credentials ? (
+                            <div className="mt-3 space-y-2 text-xs text-muted">
+                              {Object.entries(credentials.credentials).map(([key, value]) => (
+                                <div key={key} className="flex items-start justify-between gap-4">
+                                  <span className="font-semibold text-foreground">{key}</span>
+                                  <span className="break-all font-mono">{value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
-                ) : null}
+                )}
               </div>
             )}
           </div>

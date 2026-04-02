@@ -88,7 +88,7 @@ export function WalletLogsClient() {
                 </p>
                 <p className="mt-2 text-lg font-semibold">${deposit.amount.toFixed(2)}</p>
                 <p className="text-sm text-muted">
-                  {deposit.created_at} • {deposit.status}
+                  {deposit.created_at} | {deposit.status}
                 </p>
                 {deposit.admin_note ? (
                   <p className="mt-2 text-sm text-muted">Admin note: {deposit.admin_note}</p>
@@ -111,7 +111,7 @@ export function WalletLogsClient() {
                 </p>
                 <p className="mt-2 text-lg font-semibold">${Number(transaction.amount).toFixed(2)}</p>
                 <p className="text-sm text-muted">
-                  {transaction.created_at} • {transaction.status}
+                  {transaction.created_at} | {transaction.status}
                 </p>
               </div>
             ))

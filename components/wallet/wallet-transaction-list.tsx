@@ -57,7 +57,7 @@ export function WalletTransactionList({
                       {transaction.transaction_type === "deposit" ? "Deposit" : "Withdrawal"}
                     </p>
                     <p className="text-sm text-muted">
-                      {transaction.created_at} • {transaction.description || transaction.status}
+                      {transaction.created_at} | {transaction.description || transaction.status}
                     </p>
                   </div>
                 </div>

@@ -3,6 +3,9 @@ export type Product = {
   slug: string;
   name: string;
   category: string;
+  subcategory?: string;
+  categoryIcon?: string | null;
+  subcategoryIcon?: string | null;
   description: string;
   longDescription: string;
   image: string | null;
@@ -29,6 +32,7 @@ export type ApiUser = {
   is_staff: boolean;
   is_active?: boolean;
   date_joined?: string;
+  last_login?: string | null;
 };
 
 export type PaymentAsset = {
@@ -103,8 +107,8 @@ export type WithdrawalRequest = {
 
 export type WalletTransactionLog = {
   id: number;
-  transaction_type: "deposit" | "withdrawal";
-  reference_type: "deposit_request" | "withdrawal_request";
+  transaction_type: "deposit" | "withdrawal" | "purchase";
+  reference_type: "deposit_request" | "withdrawal_request" | "order";
   reference_id: number;
   amount: number;
   balance_before: number;
@@ -118,6 +122,8 @@ export type Order = {
   id: string;
   reference: string;
   user?: ApiUser | null;
+  guest_name?: string;
+  guest_email?: string;
   product: Product;
   amount_expected: number;
   selected_payment_asset: PaymentAsset | null;

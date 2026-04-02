@@ -76,7 +76,7 @@ export function OrdersClient() {
                 <StatusBadge status={order.status} />
                 <h2 className="mt-3 text-xl font-semibold">{order.product.name}</h2>
                 <p className="mt-1 text-sm text-muted">
-                  Ref: {order.reference} • {order.selected_payment_asset?.symbol ?? "No asset selected yet"}
+                  Ref: {order.reference} | {order.selected_payment_asset?.symbol ?? "No asset selected yet"}
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
