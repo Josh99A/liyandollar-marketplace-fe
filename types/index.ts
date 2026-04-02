@@ -126,6 +126,7 @@ export type Order = {
   guest_email?: string;
   product: Product;
   amount_expected: number;
+  quantity?: number;
   selected_payment_asset: PaymentAsset | null;
   status: string;
   payment_submissions: PaymentSubmission[];

@@ -4,6 +4,7 @@ import type { CredentialsResponse, Order, PaymentDetailsResponse, PaymentSubmiss
 type OrderApi = Omit<Order, "id" | "amount_expected"> & {
   id: number;
   amount_expected: string | number;
+  quantity?: number;
   selected_payment_asset: (Order["selected_payment_asset"] & { id: number }) | null;
 };
 
@@ -12,6 +13,7 @@ function mapOrder(order: OrderApi): Order {
     ...order,
     id: String(order.id),
     amount_expected: Number(order.amount_expected),
+    quantity: order.quantity ?? 1,
     selected_payment_asset: order.selected_payment_asset
       ? {
           ...order.selected_payment_asset,
@@ -28,9 +30,18 @@ export async function createOrder(productId: string) {
   return mapOrder(response.data);
 }
 
+export async function createOrderWithQuantity(productId: string, quantity: number) {
+  const response = await apiClient.post<OrderApi>("/api/orders/", {
+    product_id: Number(productId),
+    quantity,
+  });
+  return mapOrder(response.data);
+}
+
 type GuestOrderApi = Omit<Order, "id" | "amount_expected"> & {
   id: number;
   amount_expected: string | number;
+  quantity?: number;
   selected_payment_asset: (Order["selected_payment_asset"] & { id: number }) | null;
 };
 
@@ -39,6 +50,7 @@ function mapGuestOrder(order: GuestOrderApi): Order {
     ...order,
     id: String(order.id),
     amount_expected: Number(order.amount_expected),
+    quantity: order.quantity ?? 1,
     selected_payment_asset: order.selected_payment_asset
       ? {
           ...order.selected_payment_asset,
@@ -53,12 +65,14 @@ export async function createGuestOrder(payload: {
   guestName: string;
   guestEmail: string;
   paymentAssetId?: string | null;
+  quantity?: number;
 }) {
   const response = await apiClient.post<GuestOrderApi>("/api/guest/orders/", {
     product_id: Number(payload.productId),
     guest_name: payload.guestName,
     guest_email: payload.guestEmail,
     payment_asset_id: payload.paymentAssetId ? Number(payload.paymentAssetId) : undefined,
+    quantity: payload.quantity ?? 1,
   });
   return mapGuestOrder(response.data);
 }

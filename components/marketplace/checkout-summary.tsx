@@ -1,9 +1,10 @@
 import Link from "next/link";
 import type { Product } from "@/types";
 
-export function CheckoutSummary({ product }: { product: Product }) {
+export function CheckoutSummary({ product, quantity = 1 }: { product: Product; quantity?: number }) {
   const serviceFee = 2.5;
-  const total = product.price + serviceFee;
+  const subtotal = product.price * quantity;
+  const total = subtotal + serviceFee;
 
   return (
     <aside className="rounded-[2rem] border border-border bg-card/90 p-6 shadow-[var(--shadow-soft)]">
@@ -23,7 +24,11 @@ export function CheckoutSummary({ product }: { product: Product }) {
       <div className="mt-6 space-y-4 rounded-3xl border border-border bg-bg/65 p-5">
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted">Subtotal</span>
-          <span className="font-semibold">${product.price.toFixed(2)}</span>
+          <span className="font-semibold">${subtotal.toFixed(2)}</span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted">Quantity</span>
+          <span className="font-semibold">{quantity}</span>
         </div>
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted">Service fee</span>

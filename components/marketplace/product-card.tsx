@@ -29,6 +29,7 @@ import { AssetIcon } from "@/components/ui/crypto-icon";
 import {
   createGuestOrder,
   createOrder,
+  createOrderWithQuantity,
   downloadCredentialsPdf,
   downloadGuestCredentialsPdf,
   getCredentials,
@@ -80,6 +81,8 @@ export function ProductCard({ product }: { product: Product }) {
   const [credentials, setCredentials] = useState<CredentialsResponse | null>(null);
   const [walletSummary, setWalletSummary] = useState<WalletSummary | null>(null);
   const [walletLoading, setWalletLoading] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const maxQuantity = product.singleItem ? 1 : (product.stockCount ?? 1);
   const [guestForm, setGuestForm] = useState({
     name: "",
     email: "",
@@ -139,6 +142,7 @@ export function ProductCard({ product }: { product: Product }) {
     setCredentials(null);
     setProofForm({ tx_hash: "", note: "" });
     setGuestForm({ name: "", email: "" });
+    setQuantity(1);
     setSelectedAssetId((current) => current ?? assets[0]?.id ?? null);
   };
 
@@ -149,7 +153,8 @@ export function ProductCard({ product }: { product: Product }) {
   const canSubmitOrder =
     authReady && Boolean(selectedAssetId) && (!isGuest || (guestEmailValid && guestNameValid));
   const walletBalance = walletSummary?.balance ?? 0;
-  const canPayWithWallet = Boolean(user && walletSummary && walletBalance >= product.price);
+  const totalAmount = product.price * quantity;
+  const canPayWithWallet = Boolean(user && walletSummary && walletBalance >= totalAmount);
 
   const handleCreateOrder = async () => {
     if (!selectedAssetId) {
@@ -161,7 +166,7 @@ export function ProductCard({ product }: { product: Product }) {
     setMessage(null);
     try {
       if (user) {
-        const created = await createOrder(product.id);
+        const created = await createOrderWithQuantity(product.id, quantity);
         const updated = await selectPaymentAsset(created.id, selectedAssetId);
         const details = await getPaymentDetails(created.id);
         setOrder(updated);
@@ -173,6 +178,7 @@ export function ProductCard({ product }: { product: Product }) {
           guestName: guestForm.name.trim(),
           guestEmail: guestForm.email.trim(),
           paymentAssetId: selectedAssetId,
+          quantity,
         });
         const details = await getGuestPaymentDetails(created.reference);
         setOrder(created);
@@ -221,7 +227,7 @@ export function ProductCard({ product }: { product: Product }) {
     setAssetError(null);
     setMessage(null);
     try {
-      const created = await createOrder(product.id);
+      const created = await createOrderWithQuantity(product.id, quantity);
       const paidOrder = await payOrderWithWallet(created.id);
       setOrder(paidOrder);
       setPaymentDetails(null);
@@ -473,10 +479,57 @@ export function ProductCard({ product }: { product: Product }) {
                               <p className="mt-1 text-xs text-rose-500">Enter a valid email address.</p>
                             ) : null}
                           </label>
+                          <div className="flex items-center justify-between rounded-2xl border border-border bg-card/70 px-4 py-3 text-sm">
+                            <span className="font-semibold">Quantity</span>
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() => setQuantity((value) => Math.max(1, value - 1))}
+                                className="h-8 w-8 rounded-full border border-border text-sm font-semibold"
+                              >
+                                -
+                              </button>
+                              <span className="w-6 text-center font-semibold">{quantity}</span>
+                              <button
+                                type="button"
+                                onClick={() => setQuantity((value) => Math.min(maxQuantity, value + 1))}
+                                className="h-8 w-8 rounded-full border border-border text-sm font-semibold disabled:opacity-50"
+                                disabled={quantity >= maxQuantity}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted">
+                            Total: ${totalAmount.toFixed(2)}
+                          </p>
                         </div>
                       ) : (
-                        <div className="mt-4 rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted">
-                          Signed in as <span className="font-semibold text-foreground">{user?.username}</span>.
+                        <div className="mt-4 space-y-3 rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted">
+                          <p>
+                            Signed in as <span className="font-semibold text-foreground">{user?.username}</span>.
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold">Quantity</span>
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() => setQuantity((value) => Math.max(1, value - 1))}
+                                className="h-8 w-8 rounded-full border border-border text-sm font-semibold"
+                              >
+                                -
+                              </button>
+                              <span className="w-6 text-center font-semibold">{quantity}</span>
+                              <button
+                                type="button"
+                                onClick={() => setQuantity((value) => Math.min(maxQuantity, value + 1))}
+                                className="h-8 w-8 rounded-full border border-border text-sm font-semibold disabled:opacity-50"
+                                disabled={quantity >= maxQuantity}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       )}
                       <div className="mt-5 rounded-2xl border border-dashed border-border bg-card/50 p-4 text-xs text-muted">
@@ -522,10 +575,10 @@ export function ProductCard({ product }: { product: Product }) {
                       ) : null}
 
                       <div className="rounded-3xl border border-border bg-bg/60 p-5">
-                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
-                          Payment methods
-                        </p>
-                        <div className="mt-4 grid gap-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                        Payment methods
+                      </p>
+                      <div className="mt-4 grid gap-3">
                           {assets.map((asset) => {
                             const active = asset.id === selectedAssetId;
                             return (
@@ -560,15 +613,15 @@ export function ProductCard({ product }: { product: Product }) {
                             );
                           })}
                         </div>
-                        <button
-                          type="button"
-                          onClick={handleCreateOrder}
-                          disabled={busy || !canSubmitOrder}
-                          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
-                        >
-                          {busy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-                          Buy it now
-                        </button>
+                      <button
+                        type="button"
+                        onClick={handleCreateOrder}
+                        disabled={busy || !canSubmitOrder}
+                        className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                      >
+                        {busy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
+                        Buy {quantity} now (${totalAmount.toFixed(2)})
+                      </button>
                         {isGuest ? (
                           <p className="mt-3 text-xs text-muted">
                             Guests will use the email above to receive updates after confirmation.
@@ -614,7 +667,8 @@ export function ProductCard({ product }: { product: Product }) {
                       <div className="mt-4 space-y-4 text-sm">
                         <div>
                           <p className="text-xs text-muted">Amount</p>
-                          <p className="mt-1 text-lg font-semibold">${product.price.toFixed(2)}</p>
+                          <p className="mt-1 text-lg font-semibold">${totalAmount.toFixed(2)}</p>
+                          <p className="text-xs text-muted">Quantity: {quantity}</p>
                         </div>
                         <div>
                           <p className="text-xs text-muted">Send to</p>

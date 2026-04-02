@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 import { CheckoutSummary } from "@/components/marketplace/checkout-summary";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { useAuthStore } from "@/stores/use-auth-store";
-import { createOrder, getPaymentDetails, payOrderWithWallet, selectPaymentAsset, submitPayment } from "@/lib/services/orders";
+import { createOrderWithQuantity, getPaymentDetails, payOrderWithWallet, selectPaymentAsset, submitPayment } from "@/lib/services/orders";
 import { getPaymentAssets } from "@/lib/services/payments";
 import { getProductBySlugClient } from "@/lib/services/products";
 import { getWallet } from "@/lib/services/wallet";
@@ -45,6 +45,8 @@ export function CheckoutClient({ slug }: { slug: string }) {
   const [message, setMessage] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [walletLoading, setWalletLoading] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const maxQuantity = product?.singleItem ? 1 : (product?.stockCount ?? 1);
   const [form, setForm] = useState({
     tx_hash: "",
     sender_wallet_address: "",
@@ -101,7 +103,7 @@ export function CheckoutClient({ slug }: { slug: string }) {
     setError(null);
     setMessage(null);
     try {
-      const created = await createOrder(product.id);
+      const created = await createOrderWithQuantity(product.id, quantity);
       setOrder(created);
       setMessage("Order created. Select a payment asset to reveal wallet instructions.");
       toast.success("Order created. Select a payment asset.");
@@ -120,7 +122,7 @@ export function CheckoutClient({ slug }: { slug: string }) {
     setError(null);
     setMessage(null);
     try {
-      const created = order ?? (await createOrder(product.id));
+      const created = order ?? (await createOrderWithQuantity(product.id, quantity));
       const paid = await payOrderWithWallet(created.id);
       setOrder(paid);
       setPaymentDetails(null);
@@ -253,10 +255,31 @@ export function CheckoutClient({ slug }: { slug: string }) {
                   <p className="mt-2 text-xs text-muted">
                     Pay instantly with your wallet balance or continue with crypto checkout.
                   </p>
+                  <div className="mt-3 flex items-center justify-between text-sm">
+                    <span className="text-muted">Quantity</span>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setQuantity((value) => Math.max(1, value - 1))}
+                        className="h-8 w-8 rounded-full border border-border text-sm font-semibold"
+                      >
+                        -
+                      </button>
+                      <span className="w-6 text-center font-semibold">{quantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => setQuantity((value) => Math.min(maxQuantity, value + 1))}
+                        className="h-8 w-8 rounded-full border border-border text-sm font-semibold disabled:opacity-50"
+                        disabled={quantity >= maxQuantity}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
                   <button
                     type="button"
                     onClick={handlePayWithWallet}
-                    disabled={submitting || walletBalance === null || walletBalance < (product?.price ?? 0)}
+                    disabled={submitting || walletBalance === null || walletBalance < ((product?.price ?? 0) * quantity)}
                     className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border border-border bg-bg px-4 py-3 text-sm font-semibold disabled:opacity-60"
                   >
                     {walletLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
@@ -289,16 +312,16 @@ export function CheckoutClient({ slug }: { slug: string }) {
                     <button
                       type="button"
                       onClick={handlePayWithWallet}
-                      disabled={submitting || walletBalance < product.price}
+                      disabled={submitting || walletBalance < (product.price * quantity)}
                       className="inline-flex items-center gap-2 rounded-full border border-border bg-bg px-4 py-2 text-sm font-semibold disabled:opacity-60"
                     >
                       {walletLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
                       Pay with wallet
                     </button>
                   </div>
-                  {walletBalance < product.price ? (
+                  {walletBalance < (product.price * quantity) ? (
                     <p className="mt-2 text-xs text-muted">
-                      Add funds to your wallet to cover the ${product.price.toFixed(2)} purchase.
+                      Add funds to your wallet to cover the ${(product.price * quantity).toFixed(2)} purchase.
                     </p>
                   ) : (
                     <p className="mt-2 text-xs text-muted">
@@ -312,6 +335,27 @@ export function CheckoutClient({ slug }: { slug: string }) {
                   Step 1
                 </p>
                 <h3 className="mt-2 text-xl font-semibold">Choose payment asset</h3>
+                <div className="mt-4 flex items-center justify-between rounded-2xl border border-border bg-card/70 px-4 py-3 text-sm">
+                  <span className="text-muted">Quantity</span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((value) => Math.max(1, value - 1))}
+                      className="h-8 w-8 rounded-full border border-border text-sm font-semibold"
+                    >
+                      -
+                    </button>
+                    <span className="w-6 text-center font-semibold">{quantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => setQuantity((value) => Math.min(maxQuantity, value + 1))}
+                        className="h-8 w-8 rounded-full border border-border text-sm font-semibold disabled:opacity-50"
+                        disabled={quantity >= maxQuantity}
+                      >
+                        +
+                      </button>
+                  </div>
+                </div>
                 <div className="mt-4 grid gap-4 md:grid-cols-3">
                   {assets.map((asset) => {
                     const active = selectedAsset?.id === asset.id;
@@ -494,7 +538,7 @@ export function CheckoutClient({ slug }: { slug: string }) {
             </div>
           ) : null}
         </section>
-        <CheckoutSummary product={product} />
+        <CheckoutSummary product={product} quantity={quantity} />
       </div>
     </div>
   );

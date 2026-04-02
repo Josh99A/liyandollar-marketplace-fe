@@ -12,6 +12,7 @@ type ProductApiResponse = {
   description: string;
   image: string | null;
   price_usd: string;
+  rating?: string | number;
   status: string;
   stock_count: number;
   single_item: boolean;
@@ -39,7 +40,7 @@ function mapProduct(product: ProductApiResponse, index = 0): Product {
     longDescription: product.description,
     image: product.image,
     price: Number(product.price_usd),
-    rating: 4.8,
+    rating: product.rating !== undefined ? Number(product.rating) : 4.8,
     stockStatus:
       product.status === "available"
         ? product.stock_count > 1
