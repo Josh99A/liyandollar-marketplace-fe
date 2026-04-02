@@ -4,9 +4,11 @@ import { cn } from "@/lib/utils/cn";
 
 export function BrandLogo({
   className,
+  imageClassName,
   priority = false,
 }: {
   className?: string;
+  imageClassName?: string;
   priority?: boolean;
 }) {
   return (
@@ -17,7 +19,7 @@ export function BrandLogo({
         width={220}
         height={220}
         priority={priority}
-        className="h-auto w-[4.5rem] sm:w-[5.25rem]"
+        className={cn("h-auto w-[4.5rem] sm:w-[5.25rem]", imageClassName)}
       />
     </Link>
   );

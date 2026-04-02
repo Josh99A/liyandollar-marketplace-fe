@@ -276,7 +276,8 @@ export function PublicHeader() {
           <Link href="/" aria-label="Go to homepage">
             <BrandLogo
               priority
-              className="rounded-[0.9rem] bg-card px-2 py-1 ring-1 ring-border"
+              className="rounded-[0.85rem] bg-card px-2 py-1 ring-1 ring-border"
+              imageClassName="w-[3.75rem] sm:w-[4.25rem]"
             />
           </Link>
         </div>
