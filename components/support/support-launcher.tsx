@@ -1,6 +1,6 @@
 "use client";
 
-import { Headset } from "lucide-react";
+import { LifeBuoy } from "lucide-react";
 import { useSupportStore } from "@/stores/use-support-store";
 import { cn } from "@/lib/utils/cn";
 
@@ -18,7 +18,7 @@ export function SupportLauncher({ className }: { className?: string }) {
       aria-label="Open support"
       title="Support"
     >
-      <Headset className="h-4 w-4" />
+      <LifeBuoy className="h-4 w-4" />
     </button>
   );
 }

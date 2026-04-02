@@ -57,8 +57,8 @@ export function DashboardTopbar() {
 
   return (
     <>
-      <header className="sticky top-4 z-30 flex items-center justify-between gap-4 rounded-[1.5rem] border border-border bg-card/90 px-4 py-3 shadow-[var(--shadow-soft)] backdrop-blur-xl">
-        <div className="flex items-center gap-3">
+      <header className="sticky top-2 z-30 flex items-center justify-between gap-3 rounded-[1.5rem] border border-border bg-card/90 px-3 py-2 shadow-[var(--shadow-soft)] backdrop-blur-xl sm:top-4 sm:px-4 sm:py-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -67,10 +67,10 @@ export function DashboardTopbar() {
           >
             <Menu className="h-4 w-4" />
           </button>
-          <div className="hidden lg:block">
+          <div className="hidden sm:block lg:hidden">
             <BrandLogo className="rounded-[0.85rem] bg-card px-2 py-1 ring-1 ring-border" />
           </div>
-          <div>
+          <div className="hidden md:block">
             <p className="text-xs uppercase tracking-[0.3em] text-muted">Dashboard</p>
             <h1 className="mt-1 text-lg font-semibold sm:text-xl">
               Welcome back{user?.first_name ? `, ${user.first_name}` : ""}.

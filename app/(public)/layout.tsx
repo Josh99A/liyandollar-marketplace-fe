@@ -9,7 +9,7 @@ export default function PublicLayout({
   return (
     <div className="app-shell">
       <PublicHeader />
-      <main>{children}</main>
+      <main className="pt-20">{children}</main>
       <PublicFooter />
     </div>
   );

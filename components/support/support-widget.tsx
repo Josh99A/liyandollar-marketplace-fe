@@ -177,28 +177,28 @@ export function SupportWidget() {
           isOpen ? "translate-x-0" : "translate-x-full",
         )}
       >
-        <header className="relative overflow-hidden border-b border-border bg-gradient-to-br from-primary via-sky-500 to-emerald-400 px-5 pb-3 pt-3 text-white">
+        <header className="relative overflow-hidden border-b border-border bg-gradient-to-br from-primary/30 via-primary/10 to-transparent px-5 pb-2 pt-2 text-foreground">
           <div className="flex items-center justify-between">
-            <BrandLogo className="rounded-2xl bg-white/90 px-2 py-1 text-slate-900" />
+            <BrandLogo className="rounded-2xl bg-card px-2 py-1 text-foreground" />
             <button
               type="button"
               onClick={close}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card/70 text-foreground hover:bg-card"
               aria-label="Close support panel"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
-          <div className="mt-3">
-            <p className="text-sm uppercase tracking-[0.3em] text-white/80">Support</p>
+          <div className="mt-2">
+            <p className="text-xs uppercase tracking-[0.3em] text-muted">Support</p>
             <h2 className="mt-1 text-xl font-semibold">Hi there 👋</h2>
-            <p className="mt-1 text-sm text-white/80">How can we help?</p>
+            <p className="mt-1 text-sm text-muted">How can we help?</p>
           </div>
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-2 flex items-center gap-2">
             {["JD", "AM", "SL"].map((initials) => (
               <div
                 key={initials}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-white/40 bg-white/20 text-[11px] font-semibold"
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card/70 text-[10px] font-semibold text-foreground"
               >
                 {initials}
               </div>
