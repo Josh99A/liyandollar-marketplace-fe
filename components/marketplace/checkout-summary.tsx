@@ -59,7 +59,7 @@ export function CheckoutSummary({ product, quantity = 1 }: { product: Product; q
         </div>
       </div>
       <Link
-        href={`/marketplace/${product.slug}`}
+        href={`/products/${product.slug}`}
         className="mt-5 inline-flex text-sm font-semibold text-primary"
       >
         Review product details

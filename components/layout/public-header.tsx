@@ -24,15 +24,13 @@ import type { NotificationItem } from "@/types";
 
 const navItems = [
   { href: "/", label: "Home" },
-  { href: "/marketplace", label: "Marketplace" },
-  { href: "/#how-it-works", label: "How it works" },
 ];
 
 const categoryItems = [
-  { href: "/marketplace?category=facebook", label: "Facebook Accounts" },
-  { href: "/marketplace?category=instagram", label: "Instagram Accounts" },
-  { href: "/marketplace?category=emails", label: "Emails" },
-  { href: "/marketplace?category=gift-cards", label: "Gift Cards" },
+  { href: "/?tag=facebook", label: "Facebook Accounts" },
+  { href: "/?tag=instagram", label: "Instagram Accounts" },
+  { href: "/?tag=email", label: "Emails" },
+  { href: "/?tag=gift", label: "Gift Cards" },
 ];
 
 type NavLinkProps = {
@@ -85,6 +83,7 @@ export function PublicHeader() {
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const [mounted, setMounted] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -118,6 +117,10 @@ export function PublicHeader() {
       setNotificationsLoading(false);
     }
   };
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -273,13 +276,12 @@ export function PublicHeader() {
       <header className="sticky top-0 z-[60] border-b border-border bg-card/95 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-3 sm:px-4 lg:px-6">
         <div className="flex items-center gap-3">
-          <Link href="/" aria-label="Go to homepage">
-            <BrandLogo
-              priority
-              className="h-12 px-1 py-1"
-              imageClassName="w-[3.4rem] sm:w-[3.9rem]"
-            />
-          </Link>
+          <BrandLogo
+            priority
+            ariaLabel="Go to homepage"
+            className="h-12 px-1 py-1"
+            imageClassName="w-[3.4rem] sm:w-[3.9rem]"
+          />
         </div>
 
         <nav className="hidden items-center gap-1.5 lg:flex">
@@ -472,14 +474,22 @@ export function PublicHeader() {
 
           <button
             type="button"
-            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            onClick={() => {
+              if (!mounted) return;
+              setTheme(resolvedTheme === "dark" ? "light" : "dark");
+            }}
+            disabled={!mounted}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground"
             aria-label="Toggle theme"
           >
-            {resolvedTheme === "dark" ? (
-              <SunMedium className="h-4 w-4" />
+            {mounted ? (
+              resolvedTheme === "dark" ? (
+                <SunMedium className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )
             ) : (
-              <Moon className="h-4 w-4" />
+              <span className="h-4 w-4" aria-hidden />
             )}
           </button>
 
@@ -495,7 +505,7 @@ export function PublicHeader() {
       </div>
 
       </header>
-      {typeof document !== "undefined" ? createPortal(drawer, document.body) : null}
+      {mounted && drawerOpen && typeof document !== "undefined" ? createPortal(drawer, document.body) : null}
     </>
   );
 }

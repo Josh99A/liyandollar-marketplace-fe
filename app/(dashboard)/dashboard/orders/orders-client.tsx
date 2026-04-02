@@ -95,7 +95,7 @@ export function OrdersClient() {
         ))}
         {!loading && !orders.length ? (
           <div className="rounded-[1.75rem] border border-border bg-card/90 p-6 text-sm text-muted">
-            No orders yet. Start from the marketplace and create your first crypto checkout.
+            No orders yet. Start from the home page and create your first crypto checkout.
           </div>
         ) : null}
       </div>

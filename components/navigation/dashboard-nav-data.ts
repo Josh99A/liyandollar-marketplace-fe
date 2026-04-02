@@ -7,7 +7,6 @@ import {
   Settings,
   Shield,
   Home,
-  Store,
   Wallet,
 } from "lucide-react";
 import type { DashboardNavItem } from "@/components/navigation/dashboard-nav-item";
@@ -15,7 +14,6 @@ import type { DashboardNavItem } from "@/components/navigation/dashboard-nav-ite
 export const primaryNav: DashboardNavItem[] = [
   { href: "/", label: "Home", icon: Home },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, matchPrefix: "/dashboard" },
-  { href: "/marketplace", label: "Marketplace", icon: Store },
   { href: "/dashboard/orders", label: "Orders", icon: Receipt, matchPrefix: "/dashboard/orders" },
 ];
 

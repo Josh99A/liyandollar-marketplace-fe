@@ -19,6 +19,7 @@ import type {
   CredentialsResponse,
   Order,
   PaymentAsset,
+  PaymentSubmission,
   PaymentDetailsResponse,
   Product,
   WalletSummary,
@@ -28,7 +29,6 @@ import { getPaymentAssets } from "@/lib/services/payments";
 import { AssetIcon } from "@/components/ui/crypto-icon";
 import {
   createGuestOrder,
-  createOrder,
   createOrderWithQuantity,
   downloadCredentialsPdf,
   downloadGuestCredentialsPdf,
@@ -65,7 +65,13 @@ function ProductFallbackIcon({ category }: { category: string }) {
   return <ShoppingBag className="h-10 w-10 text-white/90" />;
 }
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({
+  onTagClick,
+  product,
+}: {
+  onTagClick?: (tag: string) => void;
+  product: Product;
+}) {
   const { user, hasBootstrapped } = useAuthStore();
   const [open, setOpen] = useState(false);
   const [assets, setAssets] = useState<PaymentAsset[]>([]);
@@ -90,7 +96,10 @@ export function ProductCard({ product }: { product: Product }) {
   const [proofForm, setProofForm] = useState({
     tx_hash: "",
     note: "",
+    screenshot: null as File | null,
   });
+  const latestSubmission: PaymentSubmission | null =
+    order?.payment_submissions?.[order.payment_submissions.length - 1] ?? null;
 
   const openModal = async () => {
     setOpen(true);
@@ -140,7 +149,7 @@ export function ProductCard({ product }: { product: Product }) {
     setPaymentDetails(null);
     setMessage(null);
     setCredentials(null);
-    setProofForm({ tx_hash: "", note: "" });
+    setProofForm({ tx_hash: "", note: "", screenshot: null });
     setGuestForm({ name: "", email: "" });
     setQuantity(1);
     setSelectedAssetId((current) => current ?? assets[0]?.id ?? null);
@@ -155,6 +164,7 @@ export function ProductCard({ product }: { product: Product }) {
   const walletBalance = walletSummary?.balance ?? 0;
   const totalAmount = product.price * quantity;
   const canPayWithWallet = Boolean(user && walletSummary && walletBalance >= totalAmount);
+  const canSubmitProof = Boolean(proofForm.tx_hash.trim() && proofForm.screenshot);
 
   const handleCreateOrder = async () => {
     if (!selectedAssetId) {
@@ -202,15 +212,18 @@ export function ProductCard({ product }: { product: Product }) {
     try {
       const response = user
         ? await submitPayment(order.id, {
-            tx_hash: proofForm.tx_hash,
+            tx_hash: proofForm.tx_hash.trim(),
             note: proofForm.note,
+            screenshot: proofForm.screenshot,
           })
         : await submitGuestPayment(order.reference, {
-            tx_hash: proofForm.tx_hash,
+            tx_hash: proofForm.tx_hash.trim(),
             note: proofForm.note,
+            screenshot: proofForm.screenshot,
           });
       setOrder(response.order);
       setMessage(response.message);
+      setProofForm((current) => ({ ...current, screenshot: null }));
       toast.success("Payment submitted for confirmation.");
     } catch (err) {
       console.error("Payment submit failed", err);
@@ -276,9 +289,18 @@ export function ProductCard({ product }: { product: Product }) {
 
   useEffect(() => {
     if (order?.status === "paid" && !credentials) {
-      void loadCredentials();
+      const loadPaidCredentials = async () => {
+        try {
+          const data = user ? await getCredentials(order.id) : await getGuestCredentials(order.reference);
+          setCredentials(data);
+        } catch (err) {
+          console.error("Failed to load credentials", err);
+        }
+      };
+
+      void loadPaidCredentials();
     }
-  }, [credentials, order?.status]);
+  }, [credentials, order, user]);
 
   const handleDownloadPdf = async () => {
     if (!order) return;
@@ -339,6 +361,20 @@ export function ProductCard({ product }: { product: Product }) {
       </div>
       <h3 className="mt-4 text-xl font-semibold">{product.name}</h3>
       <p className="mt-2 text-sm leading-7 text-muted">{product.description}</p>
+      {product.tags.length > 0 ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {product.tags.map((tag) => (
+            <button
+              key={`${product.id}-${tag}`}
+              type="button"
+              onClick={() => onTagClick?.(tag)}
+              className="rounded-full border border-border bg-bg/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-muted transition hover:border-primary hover:text-primary"
+            >
+              #{tag}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <div className="mt-5 flex items-center justify-between">
         <div>
           <p className="text-sm text-muted">Starting at</p>
@@ -353,7 +389,7 @@ export function ProductCard({ product }: { product: Product }) {
             Buy
           </button>
           <Link
-            href={`/marketplace/${product.slug}`}
+            href={`/products/${product.slug}`}
             className="inline-flex items-center gap-2 rounded-full border border-border bg-bg/70 px-4 py-2 text-sm font-semibold hover:-translate-y-0.5 hover:border-primary hover:text-primary"
           >
             Details
@@ -687,19 +723,41 @@ export function ProductCard({ product }: { product: Product }) {
                         </div>
                       </div>
                       <div className="mt-5 rounded-2xl border border-dashed border-border bg-card/50 p-4 text-xs text-muted">
-                        Send only on the listed network. Payments are confirmed manually by an admin.
+                        Send only on the listed network. Submit both your transaction hash / ID and a payment screenshot for admin review.
                       </div>
                       <div className="mt-5 space-y-3">
                         <label className="text-sm font-medium">
-                          Transaction hash (optional)
+                          Transaction hash / ID
                           <input
                             value={proofForm.tx_hash}
                             onChange={(event) =>
                               setProofForm((current) => ({ ...current, tx_hash: event.target.value }))
                             }
                             className="mt-2 w-full rounded-2xl border border-border bg-card/70 px-4 py-3 text-sm outline-none focus:border-primary"
-                            placeholder="Paste transaction hash"
+                            placeholder="Paste transaction hash or transfer ID"
                           />
+                        </label>
+                        <label className="text-sm font-medium">
+                          Payment screenshot
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(event) =>
+                              setProofForm((current) => ({
+                                ...current,
+                                screenshot: event.target.files?.[0] ?? null,
+                              }))
+                            }
+                            className="mt-2 w-full rounded-2xl border border-border bg-card/70 px-4 py-3 text-sm outline-none focus:border-primary"
+                          />
+                          <p className="mt-1 text-xs text-muted">
+                            Upload the screenshot you want the admin to review.
+                          </p>
+                          {proofForm.screenshot ? (
+                            <p className="mt-2 text-xs text-emerald-600 dark:text-emerald-300">
+                              Selected file: {proofForm.screenshot.name}
+                            </p>
+                          ) : null}
                         </label>
                         <label className="text-sm font-medium">
                           Note (optional)
@@ -717,7 +775,7 @@ export function ProductCard({ product }: { product: Product }) {
                           <button
                             type="button"
                             onClick={handleSubmitPayment}
-                            disabled={busy}
+                            disabled={busy || !canSubmitProof}
                             className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
                           >
                             {busy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
@@ -732,7 +790,33 @@ export function ProductCard({ product }: { product: Product }) {
                             Refresh status
                           </button>
                         </div>
+                        {!canSubmitProof ? (
+                          <p className="text-xs text-muted">
+                            Add both the transaction hash / ID and the payment screenshot before submitting.
+                          </p>
+                        ) : null}
                       </div>
+                      {latestSubmission ? (
+                        <div className="mt-5 rounded-2xl border border-border bg-card/70 p-4 text-xs text-muted">
+                          <p className="font-semibold text-foreground">Latest proof submission</p>
+                          <p className="mt-2 break-all">
+                            Tx hash / ID: <span className="font-mono">{latestSubmission.tx_hash || "Not provided"}</span>
+                          </p>
+                          <p className="mt-1">
+                            Review status: <span className="font-semibold">{latestSubmission.review_status.replaceAll("_", " ")}</span>
+                          </p>
+                          {latestSubmission.screenshot ? (
+                            <a
+                              href={latestSubmission.screenshot}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-2 inline-flex text-primary underline-offset-4 hover:underline"
+                            >
+                              View uploaded screenshot
+                            </a>
+                          ) : null}
+                        </div>
+                      ) : null}
                       {message ? (
                         <div className="mt-4 flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-3 text-xs text-emerald-700 dark:text-emerald-200">
                           <CheckCircle2 className="h-4 w-4" />

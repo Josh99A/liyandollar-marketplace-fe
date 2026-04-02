@@ -1,5 +1,6 @@
 import { apiClient } from "@/lib/api/client";
 import type { Product } from "@/types";
+import { buildProductTags } from "@/lib/utils/product-tags";
 
 type ProductApiResponse = {
   id: number;
@@ -51,7 +52,11 @@ function mapProduct(product: ProductApiResponse, index = 0): Product {
     stockCount: product.stock_count,
     singleItem: product.single_item,
     delivery: "After payment confirmation",
-    tags: [product.category.toLowerCase()],
+    tags: buildProductTags({
+      category: product.category,
+      name: product.title,
+      subcategory: product.subcategory ?? undefined,
+    }),
     credentialsPreview: "Unlocked only after admin payment confirmation",
     credentialsData: undefined,
     gradient: gradients[index % gradients.length],

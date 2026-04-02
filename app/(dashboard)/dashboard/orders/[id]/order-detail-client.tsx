@@ -39,6 +39,8 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState("");
   const [note, setNote] = useState("");
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const latestSubmission = order?.payment_submissions?.[order.payment_submissions.length - 1] ?? null;
 
   useEffect(() => {
     const load = async () => {
@@ -63,9 +65,14 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
     setSubmitting(true);
     setError(null);
     try {
-      const response = await submitPayment(orderId, { tx_hash: txHash, note });
+      const response = await submitPayment(orderId, {
+        tx_hash: txHash.trim(),
+        note,
+        screenshot,
+      });
       setOrder(response.order);
       setMessage(response.message);
+      setScreenshot(null);
     } catch {
       setError("Unable to submit payment proof.");
     } finally {
@@ -158,7 +165,7 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
                 Instructions
               </p>
               <p className="mt-3 text-sm leading-7 text-muted">
-                {paymentDetails.asset.instructions || "Send payment, then submit the transaction hash or note for manual review."}
+                {paymentDetails.asset.instructions || "Send payment, then submit both the transaction hash / ID and your screenshot for manual review."}
               </p>
               {order.status !== "paid" ? (
                 <div className="mt-5 grid gap-4">
@@ -166,8 +173,22 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
                     value={txHash}
                     onChange={(event) => setTxHash(event.target.value)}
                     className="w-full rounded-2xl border border-border bg-card px-4 py-3 outline-none focus:border-primary"
-                    placeholder="Transaction hash"
+                    placeholder="Transaction hash or transfer ID"
                   />
+                  <label className="grid gap-2 text-sm font-medium">
+                    <span>Payment screenshot</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => setScreenshot(event.target.files?.[0] ?? null)}
+                      className="w-full rounded-2xl border border-border bg-card px-4 py-3 text-sm"
+                    />
+                    {screenshot ? (
+                      <span className="text-xs text-emerald-600 dark:text-emerald-300">
+                        Selected file: {screenshot.name}
+                      </span>
+                    ) : null}
+                  </label>
                   <textarea
                     rows={4}
                     value={note}
@@ -178,11 +199,37 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
                   <button
                     type="button"
                     onClick={handleSubmitPayment}
-                    disabled={submitting}
+                    disabled={submitting || !txHash.trim() || !screenshot}
                     className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-70"
                   >
                     {submitting ? "Submitting..." : "Submit payment proof"}
                   </button>
+                  {!txHash.trim() || !screenshot ? (
+                    <p className="text-xs text-muted">
+                      Add both the transaction hash / ID and payment screenshot before submitting.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+              {latestSubmission ? (
+                <div className="mt-5 rounded-2xl border border-border bg-card p-4 text-sm text-muted">
+                  <p className="font-semibold text-foreground">Latest proof submission</p>
+                  <p className="mt-2 break-all">
+                    Tx hash / ID: <span className="font-mono">{latestSubmission.tx_hash || "Not provided"}</span>
+                  </p>
+                  <p className="mt-1">
+                    Review status: <span className="font-semibold">{latestSubmission.review_status.replaceAll("_", " ")}</span>
+                  </p>
+                  {latestSubmission.screenshot ? (
+                    <a
+                      href={latestSubmission.screenshot}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 inline-flex text-primary underline-offset-4 hover:underline"
+                    >
+                      View uploaded screenshot
+                    </a>
+                  ) : null}
                 </div>
               ) : null}
             </div>
