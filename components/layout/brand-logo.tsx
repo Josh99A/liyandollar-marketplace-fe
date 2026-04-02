@@ -12,7 +12,7 @@ export function BrandLogo({
   priority?: boolean;
 }) {
   return (
-    <Link href="/" className={cn("inline-flex items-center", className)}>
+    <Link href="/" className={cn("inline-flex items-center overflow-hidden", className)}>
       <Image
         src="/liyandollar-logo.png"
         alt="LiyanDollar Marketplace"
