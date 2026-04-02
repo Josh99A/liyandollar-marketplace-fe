@@ -87,6 +87,14 @@ export function DashboardTopbar() {
               className="w-full rounded-full border border-border bg-bg/70 py-2 pl-11 pr-4 text-sm outline-none placeholder:text-muted/70 focus:border-primary"
             />
           </div>
+          {user?.is_staff ? (
+            <Link
+              href="/dashboard/admin"
+              className="ml-4 hidden items-center gap-2 rounded-full border border-border bg-card/80 px-4 py-2 text-sm font-semibold text-primary shadow-[var(--shadow-soft)] lg:inline-flex"
+            >
+              Admin panel
+            </Link>
+          ) : null}
         </div>
 
         <div className="flex items-center gap-2">
