@@ -169,6 +169,8 @@ export function ProductCard({
   const totalAmount = product.price * quantity;
   const canPayWithWallet = Boolean(user && walletSummary && walletBalance >= totalAmount);
   const canSubmitProof = Boolean(proofForm.tx_hash.trim() && proofForm.screenshot);
+  const guestAccessToken = order?.guest_access_token ?? null;
+  const guestAccessUrl = order?.guest_access_url ?? null;
   const quantityHelpText = product.singleItem
     ? "This product is limited to one purchase per order."
     : maxQuantity <= 1
@@ -199,10 +201,13 @@ export function ProductCard({
           paymentAssetId: selectedAssetId,
           quantity,
         });
-        const details = await getGuestPaymentDetails(created.reference);
+        if (!created.guest_access_token) {
+          throw new Error("Guest access token missing from order response.");
+        }
+        const details = await getGuestPaymentDetails(created.guest_access_token);
         setOrder(created);
         setPaymentDetails(details);
-        setMessage("Payment instructions ready. Save your order reference.");
+        setMessage("Payment instructions ready. Save your secure access link before you leave this page.");
       }
       toast.success("Payment instructions ready.");
     } catch (err) {
@@ -216,6 +221,10 @@ export function ProductCard({
 
   const handleSubmitPayment = async () => {
     if (!order) return;
+    if (!user && !guestAccessToken) {
+      setAssetError("Guest access link is missing for this order.");
+      return;
+    }
     setBusy(true);
     setAssetError(null);
     try {
@@ -225,7 +234,7 @@ export function ProductCard({
             note: proofForm.note,
             screenshot: proofForm.screenshot,
           })
-        : await submitGuestPayment(order.reference, {
+        : await submitGuestPayment(guestAccessToken ?? "", {
             tx_hash: proofForm.tx_hash.trim(),
             note: proofForm.note,
             screenshot: proofForm.screenshot,
@@ -270,10 +279,14 @@ export function ProductCard({
 
   const refreshOrderStatus = async () => {
     if (!order) return;
+    if (!user && !guestAccessToken) {
+      setAssetError("Guest access link is missing for this order.");
+      return;
+    }
     setBusy(true);
     setAssetError(null);
     try {
-      const refreshed = user ? await getOrder(order.id) : await getGuestOrder(order.reference);
+      const refreshed = user ? await getOrder(order.id) : await getGuestOrder(guestAccessToken ?? "");
       setOrder(refreshed);
       setMessage("Order status refreshed.");
       toast.success("Order status refreshed.");
@@ -288,8 +301,12 @@ export function ProductCard({
 
   const loadCredentials = async () => {
     if (!order) return;
+    if (!user && !guestAccessToken) {
+      setAssetError("Guest access link is missing for this order.");
+      return;
+    }
     try {
-      const data = user ? await getCredentials(order.id) : await getGuestCredentials(order.reference);
+      const data = user ? await getCredentials(order.id) : await getGuestCredentials(guestAccessToken ?? "");
       setCredentials(data);
     } catch (err) {
       console.error("Failed to load credentials", err);
@@ -300,7 +317,7 @@ export function ProductCard({
     if (order?.status === "paid" && !credentials) {
       const loadPaidCredentials = async () => {
         try {
-          const data = user ? await getCredentials(order.id) : await getGuestCredentials(order.reference);
+          const data = user ? await getCredentials(order.id) : await getGuestCredentials(guestAccessToken ?? "");
           setCredentials(data);
         } catch (err) {
           console.error("Failed to load credentials", err);
@@ -309,13 +326,17 @@ export function ProductCard({
 
       void loadPaidCredentials();
     }
-  }, [credentials, order, user]);
+  }, [credentials, guestAccessToken, order, user]);
 
   const handleDownloadPdf = async () => {
     if (!order) return;
+    if (!user && !guestAccessToken) {
+      setAssetError("Guest access link is missing for this order.");
+      return;
+    }
     const blob = user
       ? await downloadCredentialsPdf(order.id)
-      : await downloadGuestCredentialsPdf(order.reference);
+      : await downloadGuestCredentialsPdf(guestAccessToken ?? "");
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -333,6 +354,12 @@ export function ProductCard({
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1800);
     toast.success("Wallet address copied.");
+  };
+
+  const handleCopyGuestLink = async () => {
+    if (!guestAccessUrl) return;
+    await navigator.clipboard.writeText(guestAccessUrl);
+    toast.success("Secure order link copied.");
   };
 
   const credentialItems = normalizeCredentialsCollection(credentials?.credentials);
@@ -683,7 +710,7 @@ export function ProductCard({
                         </div>
                       )}
                       <div className="mt-5 rounded-2xl border border-dashed border-border bg-card/50 p-4 text-xs text-muted">
-                        You will receive a reference after payment instructions load. Keep it safe for support.
+                        You will receive an order number for support and, for guest checkout, a secure private link for future access.
                       </div>
                     </div>
 
@@ -839,6 +866,29 @@ export function ProductCard({
                       <div className="mt-5 rounded-2xl border border-dashed border-border bg-card/50 p-4 text-xs text-muted">
                         Send only on the listed network. Submit both your transaction hash / ID and a payment screenshot for admin review.
                       </div>
+                      {!user && guestAccessUrl ? (
+                        <div className="mt-5 rounded-2xl border border-[var(--color-success-border)] bg-[var(--color-success-soft)] p-4 text-xs text-[var(--color-success-foreground)]">
+                          <p className="font-semibold">Save this secure guest access link.</p>
+                          <p className="mt-2 break-all font-mono">{guestAccessUrl}</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={handleCopyGuestLink}
+                              className="inline-flex items-center gap-2 rounded-full border border-[var(--color-success-border)] bg-white/70 px-3 py-2 text-xs font-semibold text-[var(--color-success-foreground)]"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                              Copy link
+                            </button>
+                            <Link
+                              href={`/guest/orders/${guestAccessToken}`}
+                              className="inline-flex items-center gap-2 rounded-full border border-[var(--color-success-border)] bg-white/70 px-3 py-2 text-xs font-semibold text-[var(--color-success-foreground)]"
+                            >
+                              View order
+                            </Link>
+                          </div>
+                          <p className="mt-3">Do not share this link. It is the secure way to return to your purchase later.</p>
+                        </div>
+                      ) : null}
                       <div className="mt-5 space-y-3">
                         <label className="text-sm font-medium">
                           Transaction hash / ID

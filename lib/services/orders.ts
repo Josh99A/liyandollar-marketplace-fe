@@ -9,9 +9,12 @@ type OrderApi = Omit<Order, "id" | "amount_expected"> & {
 };
 
 function mapOrder(order: OrderApi): Order {
+  const orderNumber = order.order_number ?? order.reference;
   return {
     ...order,
     id: String(order.id),
+    reference: orderNumber,
+    order_number: orderNumber,
     amount_expected: Number(order.amount_expected),
     quantity: order.quantity ?? 1,
     selected_payment_asset: order.selected_payment_asset
@@ -46,9 +49,12 @@ type GuestOrderApi = Omit<Order, "id" | "amount_expected"> & {
 };
 
 function mapGuestOrder(order: GuestOrderApi): Order {
+  const orderNumber = order.order_number ?? order.reference;
   return {
     ...order,
     id: String(order.id),
+    reference: orderNumber,
+    order_number: orderNumber,
     amount_expected: Number(order.amount_expected),
     quantity: order.quantity ?? 1,
     selected_payment_asset: order.selected_payment_asset
@@ -67,7 +73,7 @@ export async function createGuestOrder(payload: {
   paymentAssetId?: string | null;
   quantity?: number;
 }) {
-  const response = await apiClient.post<GuestOrderApi>("/api/guest/orders/", {
+  const response = await apiClient.post<GuestOrderApi>("/api/orders/", {
     product_id: Number(payload.productId),
     guest_name: payload.guestName,
     guest_email: payload.guestEmail,
@@ -77,14 +83,14 @@ export async function createGuestOrder(payload: {
   return mapGuestOrder(response.data);
 }
 
-export async function getGuestOrder(reference: string) {
-  const response = await apiClient.get<GuestOrderApi>(`/api/guest/orders/${reference}/`);
+export async function getGuestOrder(token: string) {
+  const response = await apiClient.get<GuestOrderApi>(`/api/guest/orders/${token}/`);
   return mapGuestOrder(response.data);
 }
 
-export async function selectGuestPaymentAsset(reference: string, paymentAssetId: string) {
+export async function selectGuestPaymentAsset(token: string, paymentAssetId: string) {
   const response = await apiClient.post<GuestOrderApi>(
-    `/api/guest/orders/${reference}/select-payment-asset/`,
+    `/api/guest/orders/${token}/select-payment-asset/`,
     {
       payment_asset_id: Number(paymentAssetId),
     },
@@ -92,14 +98,14 @@ export async function selectGuestPaymentAsset(reference: string, paymentAssetId:
   return mapGuestOrder(response.data);
 }
 
-export async function getGuestPaymentDetails(reference: string) {
+export async function getGuestPaymentDetails(token: string) {
   const response = await apiClient.get<
     Omit<PaymentDetailsResponse, "order_id" | "asset"> & {
       order_id: number;
       asset: PaymentDetailsResponse["asset"] & { id: number };
     }
   >(
-    `/api/guest/orders/${reference}/payment-details/`,
+    `/api/guest/orders/${token}/payment-details/`,
   );
   return {
     ...response.data,
@@ -112,7 +118,7 @@ export async function getGuestPaymentDetails(reference: string) {
 }
 
 export async function submitGuestPayment(
-  reference: string,
+  token: string,
   payload: {
     tx_hash?: string;
     sender_wallet_address?: string;
@@ -132,7 +138,7 @@ export async function submitGuestPayment(
     order: GuestOrderApi;
     submission: PaymentSubmission;
     message: string;
-  }>(`/api/guest/orders/${reference}/submit-payment/`, formData, {
+  }>(`/api/guest/orders/${token}/submit-payment/`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -143,16 +149,16 @@ export async function submitGuestPayment(
   };
 }
 
-export async function getGuestCredentials(reference: string) {
+export async function getGuestCredentials(token: string) {
   const response = await apiClient.get<CredentialsResponse>(
-    `/api/guest/orders/${reference}/credentials/`,
+    `/api/guest/orders/${token}/credentials/`,
   );
   return response.data;
 }
 
-export async function downloadGuestCredentialsPdf(reference: string) {
+export async function downloadGuestCredentialsPdf(token: string) {
   const response = await apiClient.get<Blob>(
-    `/api/guest/orders/${reference}/download-pdf/`,
+    `/api/guest/orders/${token}/download-pdf/`,
     {
       responseType: "blob",
     },

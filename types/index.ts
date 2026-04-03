@@ -123,14 +123,21 @@ export type WalletTransactionLog = {
 export type Order = {
   id: string;
   reference: string;
+  order_number?: string;
   user?: ApiUser | null;
+  is_guest?: boolean;
   guest_name?: string;
   guest_email?: string;
+  guest_access_token?: string | null;
+  guest_access_url?: string | null;
   product: Product;
   amount_expected: number;
   quantity?: number;
   selected_payment_asset: PaymentAsset | null;
   status: string;
+  payment_details?: PaymentDetailsResponse | null;
+  credentials_available?: boolean;
+  pdf_available?: boolean;
   payment_submissions: PaymentSubmission[];
   created_at: string;
   updated_at: string;

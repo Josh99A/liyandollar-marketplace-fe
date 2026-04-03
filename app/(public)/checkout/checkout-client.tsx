@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Copy, LoaderCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { CheckoutSummary } from "@/components/marketplace/checkout-summary";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { useAuthStore } from "@/stores/use-auth-store";
-import { createOrderWithQuantity, getPaymentDetails, payOrderWithWallet, selectPaymentAsset, submitPayment } from "@/lib/services/orders";
+import { createGuestOrder, createOrderWithQuantity, getPaymentDetails, payOrderWithWallet, selectPaymentAsset, submitPayment } from "@/lib/services/orders";
 import { getPaymentAssets } from "@/lib/services/payments";
 import { getProductBySlugClient } from "@/lib/services/products";
 import { getWallet } from "@/lib/services/wallet";
@@ -34,6 +35,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export function CheckoutClient({ slug }: { slug: string }) {
+  const router = useRouter();
   const { user, hasBootstrapped } = useAuthStore();
   const [product, setProduct] = useState<Product | null>(null);
   const [assets, setAssets] = useState<PaymentAsset[]>([]);
@@ -47,6 +49,11 @@ export function CheckoutClient({ slug }: { slug: string }) {
   const [walletLoading, setWalletLoading] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const maxQuantity = product?.singleItem ? 1 : (product?.stockCount ?? 1);
+  const [guestForm, setGuestForm] = useState({
+    name: "",
+    email: "",
+  });
+  const [guestPaymentAssetId, setGuestPaymentAssetId] = useState<string>("");
   const [form, setForm] = useState({
     tx_hash: "",
     sender_wallet_address: "",
@@ -64,6 +71,7 @@ export function CheckoutClient({ slug }: { slug: string }) {
         ]);
         setProduct(resolvedProduct);
         setAssets(paymentAssets);
+        setGuestPaymentAssetId((current) => current || paymentAssets[0]?.id || "");
       } catch (err) {
         console.error("Failed to load checkout context", err);
         setError("Unable to load checkout information right now.");
@@ -92,6 +100,9 @@ export function CheckoutClient({ slug }: { slug: string }) {
   }, [hasBootstrapped, user]);
 
   const selectedAssetId = order?.selected_payment_asset?.id ?? null;
+  const isGuest = hasBootstrapped && !user;
+  const guestEmailValid = !isGuest || /.+@.+\..+/.test(guestForm.email.trim());
+  const guestNameValid = !isGuest || guestForm.name.trim().length > 1;
   const quantityHelpText = product?.singleItem
     ? "This product is limited to one purchase per order."
     : maxQuantity <= 1
@@ -108,6 +119,19 @@ export function CheckoutClient({ slug }: { slug: string }) {
     setError(null);
     setMessage(null);
     try {
+      if (!user) {
+        const created = await createGuestOrder({
+          productId: product.id,
+          guestName: guestForm.name.trim(),
+          guestEmail: guestForm.email.trim(),
+          paymentAssetId: guestPaymentAssetId || null,
+          quantity,
+        });
+        router.push(
+          `/checkout/success?order=${encodeURIComponent(created.reference)}&access=${encodeURIComponent(created.guest_access_url ?? "")}&guest=1`,
+        );
+        return;
+      }
       const created = await createOrderWithQuantity(product.id, quantity);
       setOrder(created);
       setMessage("Order created. Select a payment asset to reveal wallet instructions.");
@@ -227,14 +251,83 @@ export function CheckoutClient({ slug }: { slug: string }) {
           {!hasBootstrapped ? null : !user ? (
             <div className="mt-6 rounded-[1.5rem] border border-border bg-bg/55 p-5">
               <p className="text-sm leading-7 text-muted">
-                Sign in to create an order, select a payment asset, and track confirmation.
+                Guest checkout is available here. If you prefer, you can still sign in to keep purchases in your dashboard permanently.
               </p>
+              <div className="mt-4 grid gap-4">
+                <label className="space-y-2 text-sm font-medium">
+                  <span>Name</span>
+                  <input
+                    value={guestForm.name}
+                    onChange={(event) =>
+                      setGuestForm((current) => ({ ...current, name: event.target.value }))
+                    }
+                    className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none placeholder:text-muted/70 focus:border-primary"
+                    placeholder="Jane Doe"
+                  />
+                </label>
+                <label className="space-y-2 text-sm font-medium">
+                  <span>Email</span>
+                  <input
+                    value={guestForm.email}
+                    onChange={(event) =>
+                      setGuestForm((current) => ({ ...current, email: event.target.value }))
+                    }
+                    className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none placeholder:text-muted/70 focus:border-primary"
+                    placeholder="jane@email.com"
+                    type="email"
+                  />
+                </label>
+                <label className="space-y-2 text-sm font-medium">
+                  <span>Payment asset</span>
+                  <select
+                    value={guestPaymentAssetId}
+                    onChange={(event) => setGuestPaymentAssetId(event.target.value)}
+                    className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
+                  >
+                    {assets.map((asset) => (
+                      <option key={asset.id} value={asset.id}>
+                        {asset.name} ({asset.symbol}) - {asset.network}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="flex items-center justify-between rounded-2xl border border-border bg-card/70 px-4 py-3 text-sm">
+                  <span className="text-muted">Quantity</span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((value) => Math.max(1, value - 1))}
+                      className="h-8 w-8 rounded-full border border-border text-sm font-semibold"
+                    >
+                      -
+                    </button>
+                    <span className="w-6 text-center font-semibold">{quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((value) => Math.min(maxQuantity, value + 1))}
+                      className="h-8 w-8 rounded-full border border-border text-sm font-semibold disabled:opacity-50"
+                      disabled={quantity >= maxQuantity}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted">{quantityHelpText}</p>
+              </div>
               <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={handleCreateOrder}
+                  disabled={submitting || !guestEmailValid || !guestNameValid || !guestPaymentAssetId}
+                  className="rounded-full bg-primary px-5 py-3 text-center text-sm font-semibold text-white disabled:opacity-70"
+                >
+                  {submitting ? "Creating guest order..." : "Continue as guest"}
+                </button>
                 <Link
                   href={`/login?redirect=/checkout?product=${product.slug}`}
-                  className="rounded-full bg-primary px-5 py-3 text-center text-sm font-semibold text-white"
+                  className="rounded-full border border-border px-5 py-3 text-center text-sm font-semibold"
                 >
-                  Login to continue
+                  Login instead
                 </Link>
                 <Link
                   href="/register"
@@ -243,6 +336,15 @@ export function CheckoutClient({ slug }: { slug: string }) {
                   Create account
                 </Link>
               </div>
+              {!guestEmailValid || !guestNameValid ? (
+                <p className="mt-3 text-xs text-muted">
+                  Enter your name and a valid email address so we can send your secure order link and updates.
+                </p>
+              ) : !guestPaymentAssetId ? (
+                <p className="mt-3 text-xs text-muted">
+                  No payment asset is available for guest checkout right now.
+                </p>
+              ) : null}
             </div>
           ) : !order ? (
             <div className="mt-6 rounded-[1.5rem] border border-border bg-bg/55 p-5">
