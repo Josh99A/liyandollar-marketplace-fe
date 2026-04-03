@@ -9,6 +9,9 @@
   --color-muted: #8b5a3c;
   --color-accent: #ffe3cf;
   --color-success: #4ccb70;
+  --color-success-foreground: #155724;
+  --color-success-soft: rgba(76, 203, 112, 0.18);
+  --color-success-border: rgba(33, 124, 58, 0.28);
   --color-warning: #ffb166;
   --color-danger: #b9382b;
   --color-danger-soft: rgba(185, 56, 43, 0.14);
@@ -24,6 +27,9 @@
   --color-muted: #d5b49f;
   --color-accent: rgba(255, 138, 61, 0.16);
   --color-success: #4ccb70;
+  --color-success-foreground: #dcfce7;
+  --color-success-soft: rgba(76, 203, 112, 0.18);
+  --color-success-border: rgba(76, 203, 112, 0.32);
   --color-warning: #ffb166;
   --color-danger: #ff8b7a;
   --color-danger-soft: rgba(255, 139, 122, 0.16);
@@ -39,6 +45,9 @@
   --color-muted: var(--color-muted);
   --color-accent: var(--color-accent);
   --color-success: var(--color-success);
+  --color-success-foreground: var(--color-success-foreground);
+  --color-success-soft: var(--color-success-soft);
+  --color-success-border: var(--color-success-border);
   --color-warning: var(--color-warning);
   --color-danger: var(--color-danger);
   --color-danger-soft: var(--color-danger-soft);

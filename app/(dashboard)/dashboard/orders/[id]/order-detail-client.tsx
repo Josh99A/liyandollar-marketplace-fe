@@ -244,8 +244,8 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
         )}
 
         {order.status === "paid" ? (
-          <div className="mt-6 rounded-3xl border border-emerald-400/30 bg-emerald-500/10 p-5">
-            <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-200">
+          <div className="mt-6 rounded-3xl border border-[var(--color-success-border)] bg-[var(--color-success-soft)] p-5">
+            <p className="text-sm font-semibold text-[var(--color-success-foreground)]">
               Payment confirmed. Credentials are now available.
             </p>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -299,7 +299,7 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
         ) : null}
 
         {message ? (
-          <div className="mt-6 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-200">
+          <div className="mt-6 rounded-2xl border border-[var(--color-success-border)] bg-[var(--color-success-soft)] p-4 text-sm text-[var(--color-success-foreground)]">
             {message}
           </div>
         ) : null}

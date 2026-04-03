@@ -169,6 +169,11 @@ export function ProductCard({
   const totalAmount = product.price * quantity;
   const canPayWithWallet = Boolean(user && walletSummary && walletBalance >= totalAmount);
   const canSubmitProof = Boolean(proofForm.tx_hash.trim() && proofForm.screenshot);
+  const quantityHelpText = product.singleItem
+    ? "This product is limited to one purchase per order."
+    : maxQuantity <= 1
+      ? "Only 1 item is currently available."
+      : `${maxQuantity} items currently available for this product.`;
 
   const handleCreateOrder = async () => {
     if (!selectedAssetId) {
@@ -642,6 +647,9 @@ export function ProductCard({
                           <p className="text-xs text-muted">
                             Total: ${totalAmount.toFixed(2)}
                           </p>
+                          <p className="text-xs text-muted">
+                            {quantityHelpText}
+                          </p>
                         </div>
                       ) : (
                         <div className="mt-4 space-y-3 rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted">
@@ -669,6 +677,9 @@ export function ProductCard({
                               </button>
                             </div>
                           </div>
+                          <p className="text-xs text-muted">
+                            {quantityHelpText}
+                          </p>
                         </div>
                       )}
                       <div className="mt-5 rounded-2xl border border-dashed border-border bg-card/50 p-4 text-xs text-muted">
@@ -921,7 +932,7 @@ export function ProductCard({
                         </div>
                       ) : null}
                       {message ? (
-                        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-3 text-xs text-emerald-700 dark:text-emerald-200">
+                        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-[var(--color-success-border)] bg-[var(--color-success-soft)] p-3 text-xs text-[var(--color-success-foreground)]">
                           <CheckCircle2 className="h-4 w-4" />
                           {message}
                         </div>

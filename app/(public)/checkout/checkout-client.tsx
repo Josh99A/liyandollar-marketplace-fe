@@ -527,7 +527,7 @@ export function CheckoutClient({ slug }: { slug: string }) {
           )}
 
           {message ? (
-            <div className="mt-6 flex items-start gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-800 dark:text-emerald-200">
+            <div className="mt-6 flex items-start gap-3 rounded-2xl border border-[var(--color-success-border)] bg-[var(--color-success-soft)] p-4 text-sm text-[var(--color-success-foreground)]">
               <CheckCircle2 className="mt-0.5 h-4 w-4" />
               <p>{message}</p>
             </div>
