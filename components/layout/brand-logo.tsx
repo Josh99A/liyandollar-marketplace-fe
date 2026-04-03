@@ -24,6 +24,7 @@ export function BrandLogo({
         alt="LiyanDollar Marketplace"
         width={220}
         height={220}
+        loading={priority ? "eager" : undefined}
         priority={priority}
         className={cn("h-auto w-[4.5rem] sm:w-[5.25rem]", imageClassName)}
       />

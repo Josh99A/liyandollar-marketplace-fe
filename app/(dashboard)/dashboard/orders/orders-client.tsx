@@ -78,6 +78,9 @@ export function OrdersClient() {
                 <p className="mt-1 text-sm text-muted">
                   Ref: {order.reference} | {order.selected_payment_asset?.symbol ?? "No asset selected yet"}
                 </p>
+                <p className="mt-1 text-sm text-muted">
+                  Quantity: {order.quantity ?? 1}
+                </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <div className="rounded-2xl border border-border bg-bg/60 px-4 py-3 text-sm">

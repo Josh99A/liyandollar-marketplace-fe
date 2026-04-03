@@ -175,15 +175,45 @@ export function ProductBrowser({
       </div>
 
       {filteredProducts.length > 0 ? (
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onTagClick={(tag) => setActiveTag(normalizeTag(tag))}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-6 md:hidden">
+            {filteredProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onTagClick={(tag) => setActiveTag(normalizeTag(tag))}
+              />
+            ))}
+          </div>
+
+          <div className="hidden overflow-hidden rounded-[1.75rem] border border-border bg-card/90 shadow-[var(--shadow-soft)] md:block">
+            <div className="overflow-x-auto">
+              <table className="min-w-full border-collapse">
+                <thead className="bg-bg/70 text-left">
+                  <tr className="text-xs uppercase tracking-[0.2em] text-muted">
+                    <th className="px-4 py-4 font-semibold">Product</th>
+                    <th className="px-4 py-4 font-semibold">Category</th>
+                    <th className="px-4 py-4 font-semibold">Tags</th>
+                    <th className="px-4 py-4 font-semibold">Rating</th>
+                    <th className="px-4 py-4 font-semibold">Price</th>
+                    <th className="px-4 py-4 font-semibold">Stock</th>
+                    <th className="px-4 py-4 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredProducts.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      variant="row"
+                      onTagClick={(tag) => setActiveTag(normalizeTag(tag))}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       ) : (
         <div className="rounded-[1.75rem] border border-dashed border-border bg-card/60 p-8 text-center text-sm text-muted">
           No products match the current filters. Clear filters or try another tag.

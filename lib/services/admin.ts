@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/api/client";
 import type {
   ApiUser,
+  CredentialsRecord,
   DepositRequest,
   Order,
   PaymentAsset,
@@ -22,7 +23,7 @@ type AdminProductApi = {
   status: string;
   stock_count: number;
   single_item: boolean;
-  credentials_data: Record<string, string>;
+  credentials_data: CredentialsRecord | CredentialsRecord[];
 };
 
 type AdminOrderApi = Omit<Order, "id" | "amount_expected"> & {
@@ -101,7 +102,7 @@ export async function createAdminProduct(payload: {
   status: string;
   stock_count: number;
   single_item: boolean;
-  credentials_data: Record<string, string>;
+  credentials_data: CredentialsRecord | CredentialsRecord[];
   image?: File | null;
 }) {
   const formData = new FormData();
@@ -150,7 +151,7 @@ export async function updateAdminProduct(
     status: string;
     stock_count: number;
     single_item: boolean;
-    credentials_data: Record<string, string>;
+    credentials_data: CredentialsRecord | CredentialsRecord[];
     image?: File | null;
   },
 ) {

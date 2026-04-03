@@ -37,6 +37,7 @@ import {
   updateAdminProduct,
   updateAdminUser,
 } from "@/lib/services/admin";
+import { normalizeCredentialsCollection } from "@/lib/utils/credentials";
 import type { ApiUser, DepositRequest, Order, PaymentAsset, Product } from "@/types";
 
 const CATEGORY_OPTIONS = [
@@ -142,6 +143,7 @@ export function AdminDashboardClient() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
+  const [armedAction, setArmedAction] = useState<string | null>(null);
   const [depositNotes, setDepositNotes] = useState<Record<number, string>>({});
   const [productForm, setProductForm] = useState({
     id: "",
@@ -155,7 +157,8 @@ export function AdminDashboardClient() {
     status: "available",
     stock_count: 1,
     single_item: false,
-    credentials_json: '{\n  "email": "",\n  "password": ""\n}',
+    credentials_json:
+      '[\n  {\n    "email": "",\n    "password": ""\n  }\n]',
     image: null as File | null,
     category_icon: null as File | null,
     subcategory_icon: null as File | null,
@@ -205,6 +208,12 @@ export function AdminDashboardClient() {
     setSubcategoryIconPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [productForm.subcategory_icon, productForm.existingSubcategoryIcon]);
+
+  useEffect(() => {
+    if (!armedAction) return;
+    const timeout = window.setTimeout(() => setArmedAction(null), 4000);
+    return () => window.clearTimeout(timeout);
+  }, [armedAction]);
 
   useEffect(() => {
     if (!hasBootstrapped) return;
@@ -282,7 +291,8 @@ export function AdminDashboardClient() {
       status: "available",
       stock_count: 1,
       single_item: false,
-      credentials_json: '{\n  "email": "",\n  "password": ""\n}',
+      credentials_json:
+        '[\n  {\n    "email": "",\n    "password": ""\n  }\n]',
       image: null,
       category_icon: null,
       subcategory_icon: null,
@@ -314,6 +324,22 @@ export function AdminDashboardClient() {
       is_staff: false,
       is_active: true,
     });
+
+  const armSensitiveAction = (key: string, label: string) => {
+    setArmedAction(key);
+    toast(`${label}: click again to confirm.`, {
+      icon: "⚠️",
+    });
+  };
+
+  const updateUserInState = (id: number, changes: Partial<ApiUser>) => {
+    setUsers((current) =>
+      current.map((item) => (item.id === id ? { ...item, ...changes } : item)),
+    );
+    if (userForm.id === id) {
+      setUserForm((current) => ({ ...current, ...changes }));
+    }
+  };
 
   const saveProduct = async () => {
     setBusy(true);
@@ -789,7 +815,7 @@ export function AdminDashboardClient() {
                   Credentials JSON<span className="text-rose-500"> *</span>
                 </span>
                 <p className="text-xs text-muted">
-                  This is the secure account data delivered after payment confirmation and used in the PDF download.
+                  Add one credentials object for a single item, or an array of objects so each purchased instance has its own account details and PDF entry.
                 </p>
                 <textarea
                   rows={8}
@@ -858,7 +884,11 @@ export function AdminDashboardClient() {
                             status: product.statusValue ?? "available",
                             stock_count: product.stockCount ?? 1,
                             single_item: product.singleItem ?? false,
-                            credentials_json: JSON.stringify(product.credentialsData ?? {}, null, 2),
+                            credentials_json: JSON.stringify(
+                              normalizeCredentialsCollection(product.credentialsData),
+                              null,
+                              2,
+                            ),
                             image: null,
                             category_icon: null,
                             subcategory_icon: null,
@@ -882,14 +912,24 @@ export function AdminDashboardClient() {
                       <button
                         type="button"
                         onClick={async () => {
+                          const actionKey = `delete-product-${product.id}`;
+                          if (armedAction !== actionKey) {
+                            armSensitiveAction(actionKey, `Delete ${product.name}`);
+                            return;
+                          }
+                          setArmedAction(null);
                           await deleteAdminProduct(product.id);
                           setProducts((current) => current.filter((item) => item.id !== product.id));
                           toast.success("Product deleted.");
                         }}
-                        className="inline-flex items-center gap-2 rounded-full border border-rose-300 px-4 py-2 text-sm font-semibold text-rose-600"
+                        className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold ${
+                          armedAction === `delete-product-${product.id}`
+                            ? "border-rose-500 bg-rose-500 text-white"
+                            : "border-rose-300 text-rose-600"
+                        }`}
                       >
                         <Trash2 className="h-4 w-4" />
-                        Delete
+                        {armedAction === `delete-product-${product.id}` ? "Confirm delete" : "Delete"}
                       </button>
                     </div>
                   </div>
@@ -1017,14 +1057,24 @@ export function AdminDashboardClient() {
                       <button
                         type="button"
                         onClick={async () => {
+                          const actionKey = `delete-asset-${asset.id}`;
+                          if (armedAction !== actionKey) {
+                            armSensitiveAction(actionKey, `Delete ${asset.name}`);
+                            return;
+                          }
+                          setArmedAction(null);
                           await deleteAdminPaymentAsset(asset.id);
                           setPaymentAssets((current) => current.filter((item) => item.id !== asset.id));
                           toast.success("Payment asset deleted.");
                         }}
-                        className="inline-flex items-center gap-2 rounded-full border border-rose-300 px-4 py-2 text-sm font-semibold text-rose-600"
+                        className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold ${
+                          armedAction === `delete-asset-${asset.id}`
+                            ? "border-rose-500 bg-rose-500 text-white"
+                            : "border-rose-300 text-rose-600"
+                        }`}
                       >
                         <Trash2 className="h-4 w-4" />
-                        Delete
+                        {armedAction === `delete-asset-${asset.id}` ? "Confirm delete" : "Delete"}
                       </button>
                     </div>
                   </div>
@@ -1055,14 +1105,30 @@ export function AdminDashboardClient() {
                         key={status}
                         type="button"
                         onClick={async () => {
+                          if (order.status === status) return;
+                          const actionKey = `order-status-${order.id}-${status}`;
+                          if (armedAction !== actionKey) {
+                            armSensitiveAction(actionKey, `Mark order ${order.reference} as ${status.replaceAll("_", " ")}`);
+                            return;
+                          }
+                          setArmedAction(null);
                           const updated = await setAdminOrderStatus(order.id, status);
                           setOrders((current) => current.map((item) => (item.id === updated.id ? updated : item)));
                           setMessage(`Order ${order.reference} marked ${status}.`);
                           toast.success(`Order marked ${status.replaceAll("_", " ")}.`);
                         }}
-                        className={`rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${order.status === status ? "bg-primary text-white" : "border border-border bg-card text-muted"}`}
+                        className={`rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${
+                          order.status === status
+                            ? "bg-primary text-white"
+                            : armedAction === `order-status-${order.id}-${status}`
+                              ? "border border-amber-500 bg-amber-500 text-white"
+                              : "border border-border bg-card text-muted"
+                        }`}
+                        disabled={order.status === status}
                       >
-                        {status.replaceAll("_", " ")}
+                        {armedAction === `order-status-${order.id}-${status}`
+                          ? `Confirm ${status.replaceAll("_", " ")}`
+                          : status.replaceAll("_", " ")}
                       </button>
                     ))}
                   </div>
@@ -1119,6 +1185,12 @@ export function AdminDashboardClient() {
                         <button
                           type="button"
                           onClick={async () => {
+                            const actionKey = `confirm-deposit-${deposit.id}`;
+                            if (armedAction !== actionKey) {
+                              armSensitiveAction(actionKey, `Confirm deposit #${deposit.id}`);
+                              return;
+                            }
+                            setArmedAction(null);
                             const updated = await confirmAdminWalletDeposit(
                               deposit.id,
                               depositNotes[deposit.id] ?? "",
@@ -1128,13 +1200,23 @@ export function AdminDashboardClient() {
                             );
                             toast.success("Deposit confirmed.");
                           }}
-                          className="rounded-full bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white"
+                          className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white ${
+                            armedAction === `confirm-deposit-${deposit.id}`
+                              ? "bg-amber-500"
+                              : "bg-primary"
+                          }`}
                         >
-                          Confirm
+                          {armedAction === `confirm-deposit-${deposit.id}` ? "Confirm now" : "Confirm"}
                         </button>
                         <button
                           type="button"
                           onClick={async () => {
+                            const actionKey = `reject-deposit-${deposit.id}`;
+                            if (armedAction !== actionKey) {
+                              armSensitiveAction(actionKey, `Reject deposit #${deposit.id}`);
+                              return;
+                            }
+                            setArmedAction(null);
                             const updated = await rejectAdminWalletDeposit(
                               deposit.id,
                               depositNotes[deposit.id] ?? "",
@@ -1144,9 +1226,13 @@ export function AdminDashboardClient() {
                             );
                             toast.success("Deposit rejected.");
                           }}
-                          className="rounded-full border border-rose-300 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-rose-600"
+                          className={`rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${
+                            armedAction === `reject-deposit-${deposit.id}`
+                              ? "border-rose-500 bg-rose-500 text-white"
+                              : "border-rose-300 text-rose-600"
+                          }`}
                         >
-                          Reject
+                          {armedAction === `reject-deposit-${deposit.id}` ? "Confirm reject" : "Reject"}
                         </button>
                       </div>
                     </div>
@@ -1266,47 +1352,81 @@ export function AdminDashboardClient() {
                         <button
                           type="button"
                           onClick={async () => {
-                            const updated = await updateAdminUser(managedUser.id, {
-                              is_staff: !managedUser.is_staff,
-                            });
-                            setUsers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
-                            if (userForm.id === updated.id) {
-                              setUserForm((current) => ({ ...current, is_staff: updated.is_staff }));
+                            const actionKey = `toggle-admin-${managedUser.id}`;
+                            const nextIsStaff = !managedUser.is_staff;
+                            if (armedAction !== actionKey) {
+                              armSensitiveAction(
+                                actionKey,
+                                `${nextIsStaff ? "Grant" : "Remove"} admin for ${managedUser.username || managedUser.email}`,
+                              );
+                              return;
                             }
+                            setArmedAction(null);
+                            updateUserInState(managedUser.id, { is_staff: nextIsStaff });
+                            const updated = await updateAdminUser(managedUser.id, {
+                              is_staff: nextIsStaff,
+                            });
+                            updateUserInState(updated.id, updated);
                             toast.success(managedUser.is_staff ? "Admin role removed." : "Admin role granted.");
                           }}
                           className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${
                             managedUser.is_staff
                               ? "bg-primary text-white"
-                              : "border border-amber-300/50 bg-amber-500/10 text-amber-700 dark:text-amber-200"
+                              : armedAction === `toggle-admin-${managedUser.id}`
+                                ? "bg-amber-500 text-white"
+                                : "border border-amber-300/50 bg-amber-500/10 text-amber-700 dark:text-amber-200"
                           }`}
                           disabled={managedUser.id === user?.id}
                           title={managedUser.id === user?.id ? "You cannot change your own admin role." : undefined}
                         >
                           <Shield className="h-4 w-4" />
-                          {managedUser.is_staff ? "Admin" : "Make admin"}
+                          {armedAction === `toggle-admin-${managedUser.id}`
+                            ? managedUser.is_staff
+                              ? "Confirm remove admin"
+                              : "Confirm make admin"
+                            : managedUser.is_staff
+                              ? "Admin"
+                              : "Make admin"}
                         </button>
                         <button
                           type="button"
                           onClick={async () => {
-                            const updated = await updateAdminUser(managedUser.id, {
-                              is_active: !(managedUser.is_active ?? true),
-                            });
-                            setUsers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
-                            if (userForm.id === updated.id) {
-                              setUserForm((current) => ({ ...current, is_active: updated.is_active ?? true }));
+                            const actionKey = `toggle-active-${managedUser.id}`;
+                            const nextIsActive = !(managedUser.is_active ?? true);
+                            if (armedAction !== actionKey) {
+                              armSensitiveAction(
+                                actionKey,
+                                `${nextIsActive ? "Activate" : "Deactivate"} ${managedUser.username || managedUser.email}`,
+                              );
+                              return;
                             }
+                            setArmedAction(null);
+                            updateUserInState(managedUser.id, { is_active: nextIsActive });
+                            const updated = await updateAdminUser(managedUser.id, {
+                              is_active: nextIsActive,
+                            });
+                            updateUserInState(updated.id, updated);
                             toast.success((managedUser.is_active ?? true) ? "User deactivated." : "User activated.");
                           }}
                           className={`rounded-full px-4 py-2 text-sm font-semibold ${
                             (managedUser.is_active ?? true)
-                              ? "border border-emerald-500/30 bg-emerald-500/15 text-foreground"
-                              : "border border-rose-500/30 bg-rose-500/15 text-foreground"
+                              ? armedAction === `toggle-active-${managedUser.id}`
+                                ? "border border-rose-500 bg-rose-500 text-white"
+                                : "border border-emerald-500/30 bg-emerald-500/15 text-foreground"
+                              : armedAction === `toggle-active-${managedUser.id}`
+                                ? "border border-emerald-500 bg-emerald-500 text-white"
+                                : "border border-rose-500/30 bg-rose-500/15 text-foreground"
                           }`}
                           disabled={managedUser.id === user?.id}
                           title={managedUser.id === user?.id ? "You cannot deactivate your own account." : undefined}
                         >
-                          {(managedUser.is_active ?? true) ? "Deactivate" : "Activate"}
+                          {armedAction === `toggle-active-${managedUser.id}`
+                            ? (managedUser.is_active ?? true)
+                              ? "Confirm deactivate"
+                              : "Confirm activate"
+                            : (managedUser.is_active ?? true)
+                              ? "Deactivate"
+                              : "Activate"}
                         </button>
                       </div>
                   </div>

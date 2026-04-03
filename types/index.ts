@@ -18,10 +18,12 @@ export type Product = {
   delivery: string;
   tags: string[];
   credentialsPreview: string;
-  credentialsData?: Record<string, string>;
+  credentialsData?: CredentialsRecord | CredentialsRecord[];
   gradient: string;
   featured: boolean;
 };
+
+export type CredentialsRecord = Record<string, string>;
 
 export type ApiUser = {
   id: number;
@@ -142,7 +144,7 @@ export type PaymentDetailsResponse = {
 };
 
 export type CredentialsResponse = {
-  credentials: Record<string, string>;
+  credentials: CredentialsRecord | CredentialsRecord[];
   unlocked_at: string;
 };
 

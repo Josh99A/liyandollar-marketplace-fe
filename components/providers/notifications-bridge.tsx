@@ -1,5 +1,6 @@
 "use client";
 
+import axios from "axios";
 import { useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/stores/use-auth-store";
@@ -26,13 +27,14 @@ function toastForNotification(notification: NotificationItem) {
 }
 
 export function NotificationsBridge() {
+  const hasBootstrapped = useAuthStore((state) => state.hasBootstrapped);
   const user = useAuthStore((state) => state.user);
   const lastIdRef = useRef<number>(0);
   const pollingRef = useRef<number | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    if (!user) {
+    if (!hasBootstrapped || !user) {
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
@@ -44,16 +46,40 @@ export function NotificationsBridge() {
       return;
     }
 
+    const stopRealtime = () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+      if (pollingRef.current) {
+        window.clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    };
+
     const handleNotifications = async (items: NotificationItem[]) => {
       if (items.length === 0) return;
       items.forEach(toastForNotification);
       lastIdRef.current = Math.max(lastIdRef.current, ...items.map((item) => item.id));
-      await markNotificationsRead(items.map((item) => item.id));
+      try {
+        await markNotificationsRead(items.map((item) => item.id));
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          stopRealtime();
+        }
+      }
     };
 
     const poll = async () => {
-      const items = await getNotifications(lastIdRef.current || undefined);
-      await handleNotifications(items);
+      try {
+        const items = await getNotifications(lastIdRef.current || undefined);
+        await handleNotifications(items);
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          stopRealtime();
+          return;
+        }
+      }
     };
 
     const startPolling = () => {
@@ -89,16 +115,9 @@ export function NotificationsBridge() {
     }
 
     return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
-      if (pollingRef.current) {
-        window.clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
+      stopRealtime();
     };
-  }, [user]);
+  }, [hasBootstrapped, user]);
 
   return null;
 }

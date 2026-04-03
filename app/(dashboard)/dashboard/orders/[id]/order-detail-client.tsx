@@ -11,6 +11,7 @@ import {
   getPaymentDetails,
   submitPayment,
 } from "@/lib/services/orders";
+import { normalizeCredentialsCollection } from "@/lib/utils/credentials";
 import type { CredentialsResponse, Order, PaymentDetailsResponse } from "@/types";
 
 function StatusBadge({ status }: { status: string }) {
@@ -41,6 +42,7 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
   const [note, setNote] = useState("");
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const latestSubmission = order?.payment_submissions?.[order.payment_submissions.length - 1] ?? null;
+  const credentialItems = normalizeCredentialsCollection(credentials?.credentials);
 
   useEffect(() => {
     const load = async () => {
@@ -128,8 +130,9 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <StatusBadge status={order.status} />
-            <p className="mt-3 text-sm text-muted">Order reference: {order.reference}</p>
-          </div>
+                <p className="mt-3 text-sm text-muted">Order reference: {order.reference}</p>
+                <p className="mt-1 text-sm text-muted">Quantity: {order.quantity ?? 1}</p>
+              </div>
           <div className="rounded-2xl border border-border bg-bg/60 px-4 py-3 text-sm">
             Expected amount <span className="font-semibold">${Number(order.amount_expected).toFixed(2)}</span>
           </div>
@@ -265,18 +268,30 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
           </div>
         ) : null}
 
-        {credentials ? (
+        {credentialItems.length > 0 ? (
           <div className="mt-6 rounded-3xl border border-border bg-bg/60 p-5">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary">
               Purchased credentials
             </p>
-            <div className="mt-4 grid gap-3">
-              {Object.entries(credentials.credentials).map(([key, value]) => (
+            <div className="mt-4 grid gap-4">
+              {credentialItems.map((item, index) => (
                 <div
-                  key={key}
-                  className="rounded-2xl border border-border bg-card px-4 py-3 text-sm"
+                  key={`${order.id}-${index}`}
+                  className="rounded-2xl border border-border bg-card px-4 py-4 text-sm"
                 >
-                  <span className="font-semibold">{key}:</span> {String(value)}
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                    Account {index + 1}
+                  </p>
+                  <div className="mt-3 grid gap-3">
+                    {Object.entries(item).map(([key, value]) => (
+                      <div
+                        key={key}
+                        className="rounded-2xl border border-border bg-bg px-4 py-3 text-sm"
+                      >
+                        <span className="font-semibold">{key}:</span> {String(value)}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>

@@ -109,4 +109,22 @@ export const products: Product[] = [
     gradient: "from-slate-500 via-slate-700 to-slate-900",
     featured: false,
   },
+  {
+    id: "prd_7",
+    slug: "regional-flight-ticket-deal",
+    name: "Regional Flight Ticket Deal",
+    category: "Travel Tickets",
+    description: "Discounted regional flight booking package with passenger-ready itinerary support.",
+    longDescription:
+      "This travel-focused digital product is designed for buyers who need fast access to confirmed regional flight reservations. It includes booking handoff details, itinerary documentation, and support notes for smooth traveler coordination after purchase.",
+    image: null,
+    price: 340,
+    rating: 4.7,
+    stockStatus: "In stock",
+    delivery: "Under 30 min",
+    tags: ["flight", "ticket", "travel", "booking"],
+    credentialsPreview: "booking reference + itinerary handoff",
+    gradient: "from-blue-500 via-cyan-500 to-teal-600",
+    featured: false,
+  },
 ];

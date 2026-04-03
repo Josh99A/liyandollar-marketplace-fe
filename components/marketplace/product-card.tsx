@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import {
   ArrowRight,
   Camera,
@@ -43,6 +44,7 @@ import {
   submitGuestPayment,
   submitPayment,
 } from "@/lib/services/orders";
+import { normalizeCredentialsCollection } from "@/lib/utils/credentials";
 import { getWallet } from "@/lib/services/wallet";
 import toast from "react-hot-toast";
 
@@ -68,9 +70,11 @@ function ProductFallbackIcon({ category }: { category: string }) {
 export function ProductCard({
   onTagClick,
   product,
+  variant = "card",
 }: {
   onTagClick?: (tag: string) => void;
   product: Product;
+  variant?: "card" | "row";
 }) {
   const { user, hasBootstrapped } = useAuthStore();
   const [open, setOpen] = useState(false);
@@ -326,82 +330,172 @@ export function ProductCard({
     toast.success("Wallet address copied.");
   };
 
-  return (
-    <article className="group rounded-[1.75rem] border border-border bg-card/90 p-4 shadow-[var(--shadow-soft)]">
-      <div
-        className={`relative flex h-52 items-center justify-center overflow-hidden rounded-[1.35rem] bg-gradient-to-br ${product.gradient} transition duration-300 group-hover:scale-[1.015]`}
-      >
-        {product.image ? (
-          <img
-            src={product.image}
-            alt={product.name}
-            className="h-full w-full object-cover"
-            loading="lazy"
-          />
-        ) : product.subcategoryIcon || product.categoryIcon ? (
-          <img
-            src={product.subcategoryIcon ?? product.categoryIcon ?? ""}
-            alt={`${product.name} icon`}
-            className="h-full w-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <ProductFallbackIcon category={product.category} />
-        )}
-        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-950/35 to-transparent" />
-      </div>
-      <div className="mt-5 flex items-center justify-between gap-3">
-        <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-          {product.category}
-        </span>
-        <span className="inline-flex items-center gap-1 text-sm text-muted">
-          <Star className="h-4 w-4 fill-current text-amber-400" />
-          {product.rating}
-        </span>
-      </div>
-      <h3 className="mt-4 text-xl font-semibold">{product.name}</h3>
-      <p className="mt-2 text-sm leading-7 text-muted">{product.description}</p>
-      {product.tags.length > 0 ? (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {product.tags.map((tag) => (
-            <button
-              key={`${product.id}-${tag}`}
-              type="button"
-              onClick={() => onTagClick?.(tag)}
-              className="rounded-full border border-border bg-bg/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-muted transition hover:border-primary hover:text-primary"
-            >
-              #{tag}
-            </button>
-          ))}
-        </div>
-      ) : null}
-      <div className="mt-5 flex items-center justify-between">
-        <div>
-          <p className="text-sm text-muted">Starting at</p>
-          <p className="text-2xl font-bold">${product.price.toFixed(2)}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => void openModal()}
-            className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:-translate-y-0.5"
-          >
-            Buy
-          </button>
-          <Link
-            href={`/products/${product.slug}`}
-            className="inline-flex items-center gap-2 rounded-full border border-border bg-bg/70 px-4 py-2 text-sm font-semibold hover:-translate-y-0.5 hover:border-primary hover:text-primary"
-          >
-            Details
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      </div>
+  const credentialItems = normalizeCredentialsCollection(credentials?.credentials);
 
-      {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-3xl rounded-[2rem] border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
-            <div className="flex items-start justify-between gap-4">
+  return (
+    <>
+      {variant === "row" ? (
+        <tr className="border-t border-border align-top">
+          <td className="px-4 py-4">
+            <div className="flex items-start gap-3">
+              <div
+                className={`flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br ${product.gradient}`}
+              >
+                {product.image ? (
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                ) : product.subcategoryIcon || product.categoryIcon ? (
+                  <img
+                    src={product.subcategoryIcon ?? product.categoryIcon ?? ""}
+                    alt={`${product.name} icon`}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <ProductFallbackIcon category={product.category} />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-foreground">{product.name}</p>
+                <p className="mt-1 line-clamp-2 text-sm leading-6 text-muted lg:max-w-md">
+                  {product.description}
+                </p>
+              </div>
+            </div>
+          </td>
+          <td className="px-4 py-4">
+            <span className="inline-flex rounded-full bg-accent px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              {product.category}
+            </span>
+          </td>
+          <td className="px-4 py-4">
+            <div className="flex flex-wrap gap-2">
+              {product.tags.slice(0, 3).map((tag) => (
+                <button
+                  key={`${product.id}-${tag}`}
+                  type="button"
+                  onClick={() => onTagClick?.(tag)}
+                  className="rounded-full border border-border bg-bg/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted transition hover:border-primary hover:text-primary"
+                >
+                  #{tag}
+                </button>
+              ))}
+            </div>
+          </td>
+          <td className="px-4 py-4 text-sm text-muted">
+            <div className="inline-flex items-center gap-1">
+              <Star className="h-4 w-4 fill-current text-amber-400" />
+              <span className="font-semibold text-foreground">{product.rating}</span>
+            </div>
+          </td>
+          <td className="px-4 py-4">
+            <p className="font-semibold text-foreground">${product.price.toFixed(2)}</p>
+            <p className="text-xs text-muted">{product.delivery}</p>
+          </td>
+          <td className="px-4 py-4 text-sm text-muted">{product.stockStatus}</td>
+          <td className="px-4 py-4">
+            <div className="flex flex-col gap-2 lg:flex-row">
+              <button
+                type="button"
+                onClick={() => void openModal()}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white"
+              >
+                Buy
+              </button>
+              <Link
+                href={`/products/${product.slug}`}
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-bg/70 px-4 py-2 text-sm font-semibold hover:border-primary hover:text-primary"
+              >
+                Details
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </td>
+        </tr>
+      ) : (
+        <article className="group rounded-[1.75rem] border border-border bg-card/90 p-4 shadow-[var(--shadow-soft)]">
+          <div
+            className={`relative flex h-52 items-center justify-center overflow-hidden rounded-[1.35rem] bg-gradient-to-br ${product.gradient} transition duration-300 group-hover:scale-[1.015]`}
+          >
+            {product.image ? (
+              <img
+                src={product.image}
+                alt={product.name}
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            ) : product.subcategoryIcon || product.categoryIcon ? (
+              <img
+                src={product.subcategoryIcon ?? product.categoryIcon ?? ""}
+                alt={`${product.name} icon`}
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <ProductFallbackIcon category={product.category} />
+            )}
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-950/35 to-transparent" />
+          </div>
+          <div className="mt-5 flex items-center justify-between gap-3">
+            <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              {product.category}
+            </span>
+            <span className="inline-flex items-center gap-1 text-sm text-muted">
+              <Star className="h-4 w-4 fill-current text-amber-400" />
+              {product.rating}
+            </span>
+          </div>
+          <h3 className="mt-4 text-xl font-semibold">{product.name}</h3>
+          <p className="mt-2 text-sm leading-7 text-muted">{product.description}</p>
+          {product.tags.length > 0 ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {product.tags.map((tag) => (
+                <button
+                  key={`${product.id}-${tag}`}
+                  type="button"
+                  onClick={() => onTagClick?.(tag)}
+                  className="rounded-full border border-border bg-bg/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-muted transition hover:border-primary hover:text-primary"
+                >
+                  #{tag}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <div className="mt-5 flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted">Starting at</p>
+              <p className="text-2xl font-bold">${product.price.toFixed(2)}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void openModal()}
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:-translate-y-0.5"
+              >
+                Buy
+              </button>
+              <Link
+                href={`/products/${product.slug}`}
+                className="inline-flex items-center gap-2 rounded-full border border-border bg-bg/70 px-4 py-2 text-sm font-semibold hover:-translate-y-0.5 hover:border-primary hover:text-primary"
+              >
+                Details
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </article>
+      )}
+
+      {open && typeof document !== "undefined"
+        ? createPortal(
+            <div className="fixed inset-0 z-[80] overflow-y-auto bg-slate-950/55 p-4 backdrop-blur-sm">
+              <div className="flex min-h-full items-center justify-center">
+                <div className="w-full max-w-3xl rounded-[2rem] border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
+                  <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.28em] text-primary">
                   Crypto payment
@@ -454,12 +548,21 @@ export function ProductCard({
                           Download PDF
                         </button>
                       </div>
-                      {credentials ? (
+                      {credentialItems.length > 0 ? (
                         <div className="mt-5 space-y-2 rounded-2xl border border-border bg-bg/60 p-4 text-sm">
-                          {Object.entries(credentials.credentials).map(([key, value]) => (
-                            <div key={key} className="flex flex-wrap items-start justify-between gap-4">
-                              <span className="font-semibold">{key}</span>
-                              <span className="break-all font-mono text-muted">{value}</span>
+                          {credentialItems.map((item, index) => (
+                            <div key={`${order?.reference ?? product.id}-${index}`} className="rounded-2xl border border-border bg-card/70 p-4">
+                              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                                Account {index + 1}
+                              </p>
+                              <div className="mt-3 space-y-2">
+                                {Object.entries(item).map(([key, value]) => (
+                                  <div key={key} className="flex flex-wrap items-start justify-between gap-4">
+                                    <span className="font-semibold">{key}</span>
+                                    <span className="break-all font-mono text-muted">{value}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -842,12 +945,19 @@ export function ProductCard({
                           >
                             Reveal credentials
                           </button>
-                          {credentials ? (
+                          {credentialItems.length > 0 ? (
                             <div className="mt-3 space-y-2 text-xs text-muted">
-                              {Object.entries(credentials.credentials).map(([key, value]) => (
-                                <div key={key} className="flex items-start justify-between gap-4">
-                                  <span className="font-semibold text-foreground">{key}</span>
-                                  <span className="break-all font-mono">{value}</span>
+                              {credentialItems.map((item, index) => (
+                                <div key={`${order?.reference ?? product.id}-locked-${index}`} className="rounded-2xl border border-border bg-bg/70 p-3">
+                                  <p className="font-semibold text-foreground">Account {index + 1}</p>
+                                  <div className="mt-2 space-y-2">
+                                    {Object.entries(item).map(([key, value]) => (
+                                      <div key={key} className="flex items-start justify-between gap-4">
+                                        <span className="font-semibold text-foreground">{key}</span>
+                                        <span className="break-all font-mono">{value}</span>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -857,11 +967,14 @@ export function ProductCard({
                     </div>
                   </div>
                 )}
+                </div>
+              )}
               </div>
-            )}
-          </div>
-        </div>
-      ) : null}
-    </article>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
   );
 }

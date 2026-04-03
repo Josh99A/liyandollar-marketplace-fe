@@ -292,6 +292,14 @@ export function PublicHeader() {
             );
           })}
 
+          {user ? (
+            <NavLink
+              href="/dashboard"
+              label="Dashboard"
+              active={pathname === "/dashboard" || pathname.startsWith("/dashboard/")}
+            />
+          ) : null}
+
           <div className="relative">
             <button
               type="button"

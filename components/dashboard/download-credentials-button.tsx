@@ -1,6 +1,7 @@
 "use client";
 
 import jsPDF from "jspdf";
+import { normalizeCredentialsCollection } from "@/lib/utils/credentials";
 import type { Order } from "@/types";
 
 export function DownloadCredentialsButton({ order }: { order: Order }) {
@@ -19,14 +20,18 @@ export function DownloadCredentialsButton({ order }: { order: Order }) {
     pdf.text("Credentials", 40, 185);
 
     let y = 210;
-    const credentials = order.product.credentialsData ?? {};
-    const entries = Object.entries(credentials);
-    if (entries.length === 0) {
+    const credentials = normalizeCredentialsCollection(order.product.credentialsData);
+    if (credentials.length === 0) {
       pdf.text("No credentials available in this view.", 40, y);
     } else {
-      entries.forEach(([label, value]) => {
-        pdf.text(`${label}: ${value}`, 40, y);
-        y += 24;
+      credentials.forEach((item, index) => {
+        pdf.text(`Account ${index + 1}`, 40, y);
+        y += 22;
+        Object.entries(item).forEach(([label, value]) => {
+          pdf.text(`${label}: ${value}`, 52, y);
+          y += 20;
+        });
+        y += 12;
       });
     }
 

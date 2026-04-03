@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Bell, Menu, Moon, Search, SunMedium, UserCircle2 } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { useTheme } from "@/components/providers/theme-provider";
 import { BrandLogo } from "@/components/layout/brand-logo";
@@ -24,6 +24,7 @@ export function DashboardTopbar() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const unreadCount = notifications.filter((item) => !item.is_read).length;
 
@@ -54,6 +55,10 @@ export function DashboardTopbar() {
       ? `${user?.first_name?.[0] ?? ""}${user?.last_name?.[0] ?? ""}`.toUpperCase()
       : user?.username?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? "U";
   const displayName = user?.username || user?.email || "Account";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <>
@@ -161,14 +166,22 @@ export function DashboardTopbar() {
           </div>
           <button
             type="button"
-            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            onClick={() => {
+              if (!mounted) return;
+              setTheme(resolvedTheme === "dark" ? "light" : "dark");
+            }}
+            disabled={!mounted}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg text-foreground"
             aria-label="Toggle theme"
           >
-            {resolvedTheme === "dark" ? (
-              <SunMedium className="h-4 w-4" />
+            {mounted ? (
+              resolvedTheme === "dark" ? (
+                <SunMedium className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )
             ) : (
-              <Moon className="h-4 w-4" />
+              <span className="h-4 w-4" aria-hidden />
             )}
           </button>
 
