@@ -503,7 +503,16 @@ export function AdminDashboardClient() {
         <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
           <section className="rounded-[1.75rem] border border-border bg-card/90 p-5 shadow-[var(--shadow-soft)]">
             <h2 className="text-xl font-semibold">Product form</h2>
+            <p className="mt-2 text-sm text-muted">
+              Build the listing in steps so the basics, visuals, pricing, and protected credentials are easier to manage.
+            </p>
             <div className="mt-5 grid gap-4">
+              <div className="rounded-[1.5rem] border border-border bg-bg/35 p-5">
+                <div className="mb-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">Basics</p>
+                  <h3 className="mt-2 text-lg font-semibold">Listing identity</h3>
+                  <p className="mt-1 text-sm text-muted">Set the core catalog information and customer-facing description.</p>
+                </div>
               {[
                 ["title", "Title"],
                 ["slug", "Slug"],
@@ -653,6 +662,13 @@ export function AdminDashboardClient() {
                   required
                 />
               </label>
+              </div>
+              <div className="rounded-[1.5rem] border border-border bg-bg/35 p-5">
+                <div className="mb-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">Media</p>
+                  <h3 className="mt-2 text-lg font-semibold">Visual presentation</h3>
+                  <p className="mt-1 text-sm text-muted">Control the main image and the category icon fallbacks used around the marketplace.</p>
+                </div>
               <label className="space-y-2 text-sm font-medium">
                 <span>Product image</span>
                 <input
@@ -739,9 +755,16 @@ export function AdminDashboardClient() {
                   </div>
                 ) : null}
               </label>
-              <div className="grid gap-4 sm:grid-cols-4">
-                <label className="space-y-2 text-sm font-medium">
-                  <span>
+              </div>
+              <div className="rounded-[1.5rem] border border-border bg-bg/35 p-5">
+                <div className="mb-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">Inventory</p>
+                  <h3 className="mt-2 text-lg font-semibold">Pricing and availability</h3>
+                  <p className="mt-1 text-sm text-muted">Define how the product is priced, displayed, and limited for purchase.</p>
+                </div>
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.95fr)_minmax(0,1.1fr)_minmax(0,0.85fr)]">
+                <label className="min-w-0 space-y-2 text-sm font-medium">
+                  <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-muted">
                     Price USD<span className="text-rose-500"> *</span>
                   </span>
                   <input
@@ -754,8 +777,8 @@ export function AdminDashboardClient() {
                     required
                   />
                 </label>
-                <label className="space-y-2 text-sm font-medium">
-                  <span>
+                <label className="min-w-0 space-y-2 text-sm font-medium">
+                  <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-muted">
                     Rating<span className="text-rose-500"> *</span>
                   </span>
                   <input
@@ -771,8 +794,8 @@ export function AdminDashboardClient() {
                     required
                   />
                 </label>
-                <label className="space-y-2 text-sm font-medium">
-                  <span>
+                <label className="min-w-0 space-y-2 text-sm font-medium">
+                  <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-muted">
                     Status<span className="text-rose-500"> *</span>
                   </span>
                   <select
@@ -780,7 +803,7 @@ export function AdminDashboardClient() {
                     onChange={(event) =>
                       setProductForm((current) => ({ ...current, status: event.target.value }))
                     }
-                    className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
+                    className="w-full min-w-0 rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
                     required
                   >
                     <option value="available">Available</option>
@@ -788,8 +811,8 @@ export function AdminDashboardClient() {
                     <option value="inactive">Inactive</option>
                   </select>
                 </label>
-                <label className="space-y-2 text-sm font-medium">
-                  <span>
+                <label className="min-w-0 space-y-2 text-sm font-medium">
+                  <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-muted">
                     Stock<span className="text-rose-500"> *</span>
                   </span>
                   <input
@@ -813,6 +836,13 @@ export function AdminDashboardClient() {
                 />
                 Single-item inventory
               </label>
+              </div>
+              <div className="rounded-[1.5rem] border border-border bg-bg/35 p-5">
+                <div className="mb-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">Delivery</p>
+                  <h3 className="mt-2 text-lg font-semibold">Protected credentials</h3>
+                  <p className="mt-1 text-sm text-muted">Store the account details that unlock only after payment confirmation.</p>
+                </div>
               <label className="space-y-2 text-sm font-medium">
                 <span>
                   Credentials JSON<span className="text-rose-500"> *</span>
@@ -830,6 +860,7 @@ export function AdminDashboardClient() {
                   required
                 />
               </label>
+              </div>
               <div className="flex gap-3">
                 <button type="button" onClick={saveProduct} disabled={busy} className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-70">
                   {busy ? "Saving..." : productForm.id ? "Update product" : "Create product"}
