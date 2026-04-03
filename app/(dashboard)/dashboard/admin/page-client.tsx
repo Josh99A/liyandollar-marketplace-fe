@@ -762,9 +762,9 @@ export function AdminDashboardClient() {
                   <h3 className="mt-2 text-lg font-semibold">Pricing and availability</h3>
                   <p className="mt-1 text-sm text-muted">Define how the product is priced, displayed, and limited for purchase.</p>
                 </div>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.95fr)_minmax(0,1.1fr)_minmax(0,0.85fr)]">
+              <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
                 <label className="min-w-0 space-y-2 text-sm font-medium">
-                  <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-muted">
+                  <span className="block text-sm font-semibold text-foreground">
                     Price USD<span className="text-rose-500"> *</span>
                   </span>
                   <input
@@ -778,7 +778,7 @@ export function AdminDashboardClient() {
                   />
                 </label>
                 <label className="min-w-0 space-y-2 text-sm font-medium">
-                  <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-muted">
+                  <span className="block text-sm font-semibold text-foreground">
                     Rating<span className="text-rose-500"> *</span>
                   </span>
                   <input
@@ -795,7 +795,7 @@ export function AdminDashboardClient() {
                   />
                 </label>
                 <label className="min-w-0 space-y-2 text-sm font-medium">
-                  <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-muted">
+                  <span className="block text-sm font-semibold text-foreground">
                     Status<span className="text-rose-500"> *</span>
                   </span>
                   <select
@@ -812,7 +812,7 @@ export function AdminDashboardClient() {
                   </select>
                 </label>
                 <label className="min-w-0 space-y-2 text-sm font-medium">
-                  <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-muted">
+                  <span className="block text-sm font-semibold text-foreground">
                     Stock<span className="text-rose-500"> *</span>
                   </span>
                   <input
@@ -826,13 +826,14 @@ export function AdminDashboardClient() {
                   />
                 </label>
               </div>
-              <label className="flex items-center gap-3 text-sm font-medium">
+              <label className="mt-4 flex items-center gap-3 rounded-2xl border border-border bg-card/50 px-4 py-3 text-sm font-medium">
                 <input
                   type="checkbox"
                   checked={productForm.single_item}
                   onChange={(event) =>
                     setProductForm((current) => ({ ...current, single_item: event.target.checked }))
                   }
+                  className="h-4 w-4"
                 />
                 Single-item inventory
               </label>
