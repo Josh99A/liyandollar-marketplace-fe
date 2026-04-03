@@ -92,6 +92,11 @@ export function CheckoutClient({ slug }: { slug: string }) {
   }, [hasBootstrapped, user]);
 
   const selectedAssetId = order?.selected_payment_asset?.id ?? null;
+  const quantityHelpText = product?.singleItem
+    ? "This product is limited to one purchase per order."
+    : maxQuantity <= 1
+      ? "Only 1 item is currently available."
+      : `${maxQuantity} items currently available for this product.`;
   const selectedAsset = useMemo(
     () => assets.find((asset) => asset.id === selectedAssetId) ?? null,
     [assets, selectedAssetId],
@@ -276,6 +281,7 @@ export function CheckoutClient({ slug }: { slug: string }) {
                       </button>
                     </div>
                   </div>
+                  <p className="mt-2 text-xs text-muted">{quantityHelpText}</p>
                   <button
                     type="button"
                     onClick={handlePayWithWallet}
@@ -356,6 +362,7 @@ export function CheckoutClient({ slug }: { slug: string }) {
                       </button>
                   </div>
                 </div>
+                <p className="mt-2 text-xs text-muted">{quantityHelpText}</p>
                 <div className="mt-4 grid gap-4 md:grid-cols-3">
                   {assets.map((asset) => {
                     const active = selectedAsset?.id === asset.id;
