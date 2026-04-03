@@ -23,12 +23,9 @@ import { useAuthStore } from "@/stores/use-auth-store";
 import {
   confirmAdminWalletDeposit,
   createAdminPaymentAsset,
-  createAdminWalletAsset,
   createAdminProduct,
   deleteAdminPaymentAsset,
-  deleteAdminWalletAsset,
   deleteAdminProduct,
-  getAdminWalletAssets,
   getAdminWalletDeposits,
   getAdminOrders,
   getAdminPaymentAssets,
@@ -37,12 +34,11 @@ import {
   rejectAdminWalletDeposit,
   setAdminOrderStatus,
   updateAdminPaymentAsset,
-  updateAdminWalletAsset,
   updateAdminProduct,
   updateAdminUser,
 } from "@/lib/services/admin";
 import { normalizeCredentialsCollection } from "@/lib/utils/credentials";
-import type { ApiUser, DepositRequest, Order, PaymentAsset, Product, WalletAsset } from "@/types";
+import type { ApiUser, DepositRequest, Order, PaymentAsset, Product } from "@/types";
 
 const CATEGORY_OPTIONS = [
   {
@@ -138,7 +134,6 @@ export function AdminDashboardClient() {
   const [tab, setTab] = useState<"products" | "payments" | "orders" | "users" | "wallet">("products");
   const [products, setProducts] = useState<Product[]>([]);
   const [paymentAssets, setPaymentAssets] = useState<(PaymentAsset & { is_active?: boolean })[]>([]);
-  const [walletAssets, setWalletAssets] = useState<(WalletAsset & { is_active?: boolean })[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [users, setUsers] = useState<ApiUser[]>([]);
   const [deposits, setDeposits] = useState<DepositRequest[]>([]);
@@ -182,17 +177,6 @@ export function AdminDashboardClient() {
     usd_rate: 1,
     is_active: true,
     qr_code_image: null as File | null,
-  });
-  const [walletAssetForm, setWalletAssetForm] = useState({
-    id: "",
-    name: "",
-    symbol: "",
-    network: "",
-    wallet_address: "",
-    instructions: "",
-    usd_rate: 1,
-    is_active: true,
-    qr_code: null as File | null,
   });
   const [userForm, setUserForm] = useState({
     id: 0,
@@ -242,17 +226,15 @@ export function AdminDashboardClient() {
     const load = async () => {
       setLoading(true);
       try {
-        const [productsRes, assetsRes, walletAssetsRes, ordersRes, usersRes, depositsRes] = await Promise.all([
+        const [productsRes, assetsRes, ordersRes, usersRes, depositsRes] = await Promise.all([
           getAdminProducts(),
           getAdminPaymentAssets(),
-          getAdminWalletAssets(),
           getAdminOrders(),
           getAdminUsers(),
           getAdminWalletDeposits(),
         ]);
         setProducts(productsRes);
         setPaymentAssets(assetsRes);
-        setWalletAssets(walletAssetsRes);
         setOrders(ordersRes);
         setUsers(usersRes);
         setDeposits(depositsRes);
@@ -270,13 +252,12 @@ export function AdminDashboardClient() {
   const stats = useMemo(
     () => [
       { label: "Products", value: products.length },
-      { label: "Payment Assets", value: paymentAssets.length },
-      { label: "Deposit Assets", value: walletAssets.length },
+      { label: "Shared Assets", value: paymentAssets.length },
       { label: "Pending Orders", value: orders.filter((order) => order.status !== "paid").length },
       { label: "Pending Deposits", value: deposits.filter((deposit) => deposit.status === "pending").length },
       { label: "Users", value: users.length },
     ],
-    [orders, paymentAssets.length, products.length, users.length, deposits, walletAssets.length],
+    [orders, paymentAssets.length, products.length, users.length, deposits],
   );
 
   const selectedCategory = useMemo(
@@ -333,19 +314,6 @@ export function AdminDashboardClient() {
       usd_rate: 1,
       is_active: true,
       qr_code_image: null,
-    });
-
-  const resetWalletAssetForm = () =>
-    setWalletAssetForm({
-      id: "",
-      name: "",
-      symbol: "",
-      network: "",
-      wallet_address: "",
-      instructions: "",
-      usd_rate: 1,
-      is_active: true,
-      qr_code: null,
     });
 
   const resetUserForm = () =>
@@ -475,42 +443,6 @@ export function AdminDashboardClient() {
       setError("Unable to save payment asset.");
       setErrorDetails(formatErrorDetails(err));
       toast.error("Unable to save payment asset.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const saveWalletAsset = async () => {
-    setBusy(true);
-    setError(null);
-    setErrorDetails(null);
-    try {
-      const formData = new FormData();
-      formData.append("name", walletAssetForm.name);
-      formData.append("symbol", walletAssetForm.symbol);
-      formData.append("network", walletAssetForm.network);
-      formData.append("wallet_address", walletAssetForm.wallet_address);
-      formData.append("instructions", walletAssetForm.instructions);
-      formData.append("usd_rate", String(walletAssetForm.usd_rate));
-      formData.append("is_active", String(walletAssetForm.is_active));
-      if (walletAssetForm.qr_code) {
-        formData.append("qr_code", walletAssetForm.qr_code);
-      }
-
-      const saved = walletAssetForm.id
-        ? await updateAdminWalletAsset(walletAssetForm.id, formData)
-        : await createAdminWalletAsset(formData);
-      setWalletAssets((current) => {
-        const next = current.filter((item) => item.id !== saved.id);
-        return [...next, saved];
-      });
-      setMessage("Deposit asset saved.");
-      toast.success("Deposit asset saved.");
-      resetWalletAssetForm();
-    } catch (err) {
-      setError("Unable to save deposit asset.");
-      setErrorDetails(formatErrorDetails(err));
-      toast.error("Unable to save deposit asset.");
     } finally {
       setBusy(false);
     }
@@ -1228,9 +1160,9 @@ export function AdminDashboardClient() {
           <section className="rounded-[1.75rem] border border-border bg-card/90 p-5 shadow-[var(--shadow-soft)]">
             <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
               <div>
-                <h2 className="text-xl font-semibold">Deposit assets</h2>
+                <h2 className="text-xl font-semibold">Shared payment and deposit assets</h2>
                 <p className="mt-2 text-sm text-muted">
-                  These use the same shared payment assets as checkout. Set the USD conversion rate here so deposits credit the wallet in USD.
+                  Configure each asset once here. The same asset will appear on the deposit page and at checkout, and its USD rate controls how confirmed deposits convert into wallet balance.
                 </p>
                 <div className="mt-5 grid gap-4">
                   {[
@@ -1242,9 +1174,9 @@ export function AdminDashboardClient() {
                     <label key={key} className="space-y-2 text-sm font-medium">
                       <span>{label}</span>
                       <input
-                        value={walletAssetForm[key as keyof typeof walletAssetForm] as string}
+                        value={assetForm[key as keyof typeof assetForm] as string}
                         onChange={(event) =>
-                          setWalletAssetForm((current) => ({ ...current, [key]: event.target.value }))
+                          setAssetForm((current) => ({ ...current, [key]: event.target.value }))
                         }
                         className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
                       />
@@ -1254,9 +1186,9 @@ export function AdminDashboardClient() {
                     <span>Instructions</span>
                     <textarea
                       rows={3}
-                      value={walletAssetForm.instructions}
+                      value={assetForm.instructions}
                       onChange={(event) =>
-                        setWalletAssetForm((current) => ({ ...current, instructions: event.target.value }))
+                        setAssetForm((current) => ({ ...current, instructions: event.target.value }))
                       }
                       className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
                     />
@@ -1267,9 +1199,22 @@ export function AdminDashboardClient() {
                       type="number"
                       min="0"
                       step="0.000001"
-                      value={walletAssetForm.usd_rate}
+                      value={assetForm.usd_rate}
                       onChange={(event) =>
-                        setWalletAssetForm((current) => ({ ...current, usd_rate: Number(event.target.value) }))
+                        setAssetForm((current) => ({ ...current, usd_rate: Number(event.target.value) }))
+                      }
+                      className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
+                    />
+                  </label>
+                  <label className="space-y-2 text-sm font-medium">
+                    <span>Display order</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={assetForm.display_order}
+                      onChange={(event) =>
+                        setAssetForm((current) => ({ ...current, display_order: Number(event.target.value) }))
                       }
                       className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
                     />
@@ -1280,9 +1225,9 @@ export function AdminDashboardClient() {
                       type="file"
                       accept="image/*"
                       onChange={(event) =>
-                        setWalletAssetForm((current) => ({
+                        setAssetForm((current) => ({
                           ...current,
-                          qr_code: event.target.files?.[0] ?? null,
+                          qr_code_image: event.target.files?.[0] ?? null,
                         }))
                       }
                       className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 text-sm"
@@ -1291,25 +1236,25 @@ export function AdminDashboardClient() {
                   <label className="flex items-center gap-3 text-sm font-medium">
                     <input
                       type="checkbox"
-                      checked={walletAssetForm.is_active}
+                      checked={assetForm.is_active}
                       onChange={(event) =>
-                        setWalletAssetForm((current) => ({ ...current, is_active: event.target.checked }))
+                        setAssetForm((current) => ({ ...current, is_active: event.target.checked }))
                       }
                     />
-                    Active shared asset
+                    Active shared checkout and deposit asset
                   </label>
                   <div className="flex gap-3">
                     <button
                       type="button"
-                      onClick={saveWalletAsset}
+                      onClick={saveAsset}
                       disabled={busy}
                       className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-70"
                     >
-                      {busy ? "Saving..." : walletAssetForm.id ? "Update deposit asset" : "Create deposit asset"}
+                      {busy ? "Saving..." : assetForm.id ? "Update shared asset" : "Create shared asset"}
                     </button>
                     <button
                       type="button"
-                      onClick={resetWalletAssetForm}
+                      onClick={resetAssetForm}
                       className="rounded-full border border-border px-5 py-3 text-sm font-semibold"
                     >
                       Clear
@@ -1319,20 +1264,20 @@ export function AdminDashboardClient() {
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold">Configured deposit assets</h3>
+                <h3 className="text-lg font-semibold">Configured shared assets</h3>
                 <div className="mt-5 grid gap-4">
-                  {walletAssets.length === 0 ? (
+                  {paymentAssets.length === 0 ? (
                     <div className="rounded-2xl border border-border bg-bg/60 p-4 text-sm text-muted">
-                      No deposit assets yet. Create one here and it will immediately appear on the deposit page.
+                      No shared assets yet. Create one here and it will immediately appear for deposits and checkout payments.
                     </div>
                   ) : (
-                    walletAssets.map((asset) => (
+                    paymentAssets.map((asset) => (
                       <article key={asset.id} className="rounded-3xl border border-border bg-bg/50 p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-start gap-3">
-                            {asset.qr_code ? (
+                            {asset.qr_code_image ? (
                               <img
-                                src={asset.qr_code}
+                                src={asset.qr_code_image}
                                 alt={`${asset.name} QR`}
                                 className="h-14 w-14 rounded-2xl border border-border object-cover"
                               />
@@ -1355,7 +1300,7 @@ export function AdminDashboardClient() {
                             <button
                               type="button"
                               onClick={() =>
-                                setWalletAssetForm({
+                                setAssetForm({
                                   id: asset.id,
                                   name: asset.name,
                                   symbol: asset.symbol,
@@ -1363,8 +1308,9 @@ export function AdminDashboardClient() {
                                   wallet_address: asset.wallet_address,
                                   instructions: asset.instructions,
                                   usd_rate: asset.usd_rate ?? 1,
+                                  display_order: asset.display_order ?? 0,
                                   is_active: Boolean(asset.is_active),
-                                  qr_code: null,
+                                  qr_code_image: null,
                                 })
                               }
                               className="rounded-full border border-border px-4 py-2 text-sm font-semibold"
@@ -1374,21 +1320,21 @@ export function AdminDashboardClient() {
                             <button
                               type="button"
                               onClick={async () => {
-                                const actionKey = `delete-wallet-asset-${asset.id}`;
+                                const actionKey = `delete-shared-asset-${asset.id}`;
                                 if (armedAction !== actionKey) {
-                                  armSensitiveAction(actionKey, `Delete deposit asset ${asset.name}`);
+                                  armSensitiveAction(actionKey, `Delete shared asset ${asset.name}`);
                                   return;
                                 }
                                 setArmedAction(null);
-                                await deleteAdminWalletAsset(asset.id);
-                                setWalletAssets((current) => current.filter((item) => item.id !== asset.id));
-                                if (walletAssetForm.id === asset.id) {
-                                  resetWalletAssetForm();
+                                await deleteAdminPaymentAsset(asset.id);
+                                setPaymentAssets((current) => current.filter((item) => item.id !== asset.id));
+                                if (assetForm.id === asset.id) {
+                                  resetAssetForm();
                                 }
-                                toast.success("Deposit asset deleted.");
+                                toast.success("Shared asset deleted.");
                               }}
                               className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                                armedAction === `delete-wallet-asset-${asset.id}`
+                                armedAction === `delete-shared-asset-${asset.id}`
                                   ? "bg-rose-500 text-white"
                                   : "border border-rose-300 text-rose-600"
                               }`}
