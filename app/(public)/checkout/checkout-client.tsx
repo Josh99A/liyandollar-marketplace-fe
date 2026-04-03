@@ -18,7 +18,7 @@ import type { Order, PaymentAsset, PaymentDetailsResponse, Product } from "@/typ
 
 function StatusBadge({ status }: { status: string }) {
   const styles = {
-    pending: "bg-amber-500/12 text-amber-700 dark:text-amber-300",
+    pending: "border border-[var(--color-warning-border)] bg-[var(--color-warning-soft)] text-[var(--color-warning-foreground)]",
     awaiting_confirmation: "bg-sky-500/12 text-sky-700 dark:text-sky-300",
     paid: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
     cancelled: "bg-rose-500/12 text-rose-700 dark:text-rose-300",
@@ -562,7 +562,7 @@ export function CheckoutClient({ slug }: { slug: string }) {
                         {paymentDetails.asset.instructions ||
                           "Send the exact amount using the selected network, then submit your transaction details below for admin review."}
                       </p>
-                      <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-400/25 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200">
+                      <div className="mt-5 flex items-start gap-3 rounded-2xl border border-[var(--color-warning-border)] bg-[var(--color-warning-soft)] p-4 text-sm text-[var(--color-warning-foreground)]">
                         <AlertTriangle className="mt-0.5 h-4 w-4" />
                         <p>Do not send funds on the wrong network. Manual admin confirmation is required before the order becomes paid.</p>
                       </div>

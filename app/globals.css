@@ -13,6 +13,9 @@
   --color-success-soft: rgba(76, 203, 112, 0.18);
   --color-success-border: rgba(33, 124, 58, 0.28);
   --color-warning: #ffb166;
+  --color-warning-foreground: #8a4b00;
+  --color-warning-soft: rgba(255, 177, 102, 0.2);
+  --color-warning-border: rgba(173, 96, 13, 0.3);
   --color-danger: #b9382b;
   --color-danger-soft: rgba(185, 56, 43, 0.14);
   --shadow-soft: 0 22px 65px rgba(74, 42, 22, 0.12);
@@ -31,6 +34,9 @@
   --color-success-soft: rgba(76, 203, 112, 0.18);
   --color-success-border: rgba(76, 203, 112, 0.32);
   --color-warning: #ffb166;
+  --color-warning-foreground: #fde68a;
+  --color-warning-soft: rgba(255, 177, 102, 0.16);
+  --color-warning-border: rgba(255, 177, 102, 0.28);
   --color-danger: #ff8b7a;
   --color-danger-soft: rgba(255, 139, 122, 0.16);
   --shadow-soft: 0 28px 80px rgba(14, 7, 4, 0.5);
@@ -49,6 +55,9 @@
   --color-success-soft: var(--color-success-soft);
   --color-success-border: var(--color-success-border);
   --color-warning: var(--color-warning);
+  --color-warning-foreground: var(--color-warning-foreground);
+  --color-warning-soft: var(--color-warning-soft);
+  --color-warning-border: var(--color-warning-border);
   --color-danger: var(--color-danger);
   --color-danger-soft: var(--color-danger-soft);
   --font-sans: var(--font-manrope);

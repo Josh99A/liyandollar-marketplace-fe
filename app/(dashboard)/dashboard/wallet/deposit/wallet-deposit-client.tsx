@@ -99,8 +99,8 @@ export function WalletDepositClient() {
           No deposit assets are configured yet. Add them from the admin dashboard under the `Wallet` tab.
         </div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="grid gap-3">
+        <div className="grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
+          <div className="grid gap-3 self-start">
             {assets.map((asset) => {
               const active = asset.id === selectedId;
               return (
@@ -127,91 +127,120 @@ export function WalletDepositClient() {
           </div>
 
           {selectedAsset ? (
-            <div className="rounded-3xl border border-border bg-bg/60 p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
-                Wallet address
-              </p>
-              <p className="mt-3 break-all rounded-2xl border border-border bg-card/80 px-4 py-3 text-sm font-mono">
-                {selectedAsset.wallet_address}
-              </p>
-              <button
-                type="button"
-                onClick={handleCopy}
-                className="mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-2 text-sm font-semibold"
-              >
-                <Copy className="h-4 w-4" />
-                Copy address
-              </button>
-
-              <div className="mt-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
-                  QR code
-                </p>
-                {selectedAsset.qr_code ? (
-                  <img
-                    src={selectedAsset.qr_code}
-                    alt={`${selectedAsset.name} QR code`}
-                    className="mt-3 h-44 w-44 rounded-3xl border border-border object-cover"
-                  />
-                ) : (
-                  <div className="mt-3 flex h-44 w-44 items-center justify-center rounded-3xl border border-dashed border-border text-sm text-muted">
-                    QR code not uploaded yet
+            <div className="grid gap-6 self-start lg:grid-cols-[0.9fr_1.1fr] xl:grid-cols-1">
+              <section className="rounded-3xl border border-border bg-bg/60 p-5 xl:sticky xl:top-24">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                      Selected asset
+                    </p>
+                    <h3 className="mt-2 text-xl font-semibold">
+                      {selectedAsset.name}
+                    </h3>
+                    <p className="mt-1 text-sm text-muted">
+                      {selectedAsset.symbol} on {selectedAsset.network}
+                    </p>
                   </div>
-                )}
-              </div>
-
-              <div className="mt-6 grid gap-4">
-                <label className="space-y-2 text-sm font-medium">
-                  <span>Amount in {selectedAsset.symbol}</span>
-                  <input
-                    type="number"
-                    value={form.amount}
-                    onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
-                    className="w-full rounded-2xl border border-border bg-card/80 px-4 py-3 outline-none focus:border-primary"
-                    placeholder="0.00"
-                  />
-                </label>
-                <div className="rounded-2xl border border-border bg-card/80 px-4 py-3 text-sm">
-                  <p className="text-muted">Estimated USD wallet credit</p>
-                  <p className="mt-2 text-xl font-semibold">
-                    ${estimatedUsdCredit.toFixed(2)}
-                  </p>
-                  <p className="mt-1 text-xs text-muted">
-                    Conversion rate: 1 {selectedAsset.symbol} = ${(selectedAsset.usd_rate ?? 0).toFixed(2)} USD
-                  </p>
+                  <div className="rounded-2xl border border-border bg-card/80 px-4 py-3 text-right text-sm">
+                    <p className="text-muted">USD rate</p>
+                    <p className="mt-1 font-semibold">
+                      1 {selectedAsset.symbol} = ${(selectedAsset.usd_rate ?? 0).toFixed(2)}
+                    </p>
+                  </div>
                 </div>
-                <label className="space-y-2 text-sm font-medium">
-                  <span>Transaction hash (optional)</span>
-                  <input
-                    value={form.tx_hash}
-                    onChange={(event) => setForm((current) => ({ ...current, tx_hash: event.target.value }))}
-                    className="w-full rounded-2xl border border-border bg-card/80 px-4 py-3 outline-none focus:border-primary"
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium">
-                  <span>Note (optional)</span>
-                  <textarea
-                    rows={3}
-                    value={form.note}
-                    onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))}
-                    className="w-full rounded-2xl border border-border bg-card/80 px-4 py-3 outline-none focus:border-primary"
-                  />
-                </label>
-              </div>
 
-              <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-400/25 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200">
-                <AlertTriangle className="mt-0.5 h-4 w-4" />
-                <p>Only send funds on the selected network. After admin confirmation, your wallet is credited in USD and can be used to buy any product.</p>
-              </div>
+                <div className="mt-5 rounded-2xl border border-border bg-card/80 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                    Wallet address
+                  </p>
+                  <p className="mt-3 break-all text-sm font-mono">
+                    {selectedAsset.wallet_address}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleCopy}
+                    className="mt-4 inline-flex items-center gap-2 rounded-full border border-border bg-bg px-4 py-2 text-sm font-semibold"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copy address
+                  </button>
+                </div>
 
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="mt-5 w-full rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-70"
-              >
-                {submitting ? "Submitting..." : "Submit deposit request"}
-              </button>
+                <div className="mt-5 rounded-2xl border border-border bg-card/80 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                    QR code
+                  </p>
+                  {selectedAsset.qr_code ? (
+                    <img
+                      src={selectedAsset.qr_code}
+                      alt={`${selectedAsset.name} QR code`}
+                      className="mt-3 h-44 w-44 max-w-full rounded-3xl border border-border object-cover"
+                    />
+                  ) : (
+                    <div className="mt-3 flex h-44 w-full max-w-[11rem] items-center justify-center rounded-3xl border border-dashed border-border text-center text-sm text-muted">
+                      QR code not uploaded yet
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              <section className="rounded-3xl border border-border bg-bg/60 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                  Deposit request
+                </p>
+                <div className="mt-5 grid gap-4">
+                  <label className="space-y-2 text-sm font-medium">
+                    <span>Amount in {selectedAsset.symbol}</span>
+                    <input
+                      type="number"
+                      value={form.amount}
+                      onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
+                      className="w-full rounded-2xl border border-border bg-card/80 px-4 py-3 outline-none focus:border-primary"
+                      placeholder="0.00"
+                    />
+                  </label>
+                  <div className="rounded-2xl border border-border bg-card/80 px-4 py-3 text-sm">
+                    <p className="text-muted">Estimated USD wallet credit</p>
+                    <p className="mt-2 text-xl font-semibold">
+                      ${estimatedUsdCredit.toFixed(2)}
+                    </p>
+                    <p className="mt-1 text-xs text-muted">
+                      Conversion rate: 1 {selectedAsset.symbol} = ${(selectedAsset.usd_rate ?? 0).toFixed(2)} USD
+                    </p>
+                  </div>
+                  <label className="space-y-2 text-sm font-medium">
+                    <span>Transaction hash (optional)</span>
+                    <input
+                      value={form.tx_hash}
+                      onChange={(event) => setForm((current) => ({ ...current, tx_hash: event.target.value }))}
+                      className="w-full rounded-2xl border border-border bg-card/80 px-4 py-3 outline-none focus:border-primary"
+                    />
+                  </label>
+                  <label className="space-y-2 text-sm font-medium">
+                    <span>Note (optional)</span>
+                    <textarea
+                      rows={4}
+                      value={form.note}
+                      onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))}
+                      className="w-full rounded-2xl border border-border bg-card/80 px-4 py-3 outline-none focus:border-primary"
+                    />
+                  </label>
+                </div>
+
+                <div className="mt-5 flex items-start gap-3 rounded-2xl border border-[var(--color-warning-border)] bg-[var(--color-warning-soft)] p-4 text-sm text-[var(--color-warning-foreground)]">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p>Only send funds on the selected network. After admin confirmation, your wallet is credited in USD and can be used to buy any product.</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="mt-5 w-full rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-70"
+                >
+                  {submitting ? "Submitting..." : "Submit deposit request"}
+                </button>
+              </section>
             </div>
           ) : null}
         </div>
