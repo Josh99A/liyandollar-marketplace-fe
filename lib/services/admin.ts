@@ -190,24 +190,110 @@ export async function deleteAdminProduct(id: string) {
 
 export async function getAdminPaymentAssets() {
   const response = await apiClient.get<AdminPaymentAssetApi[]>("/api/admin/payment-assets/");
-  return response.data.map((asset) => ({ ...asset, id: String(asset.id) }));
+  return response.data.map((asset) => ({
+    ...asset,
+    id: String(asset.id),
+    usd_rate: Number(asset.usd_rate),
+  }));
 }
 
 export async function createAdminPaymentAsset(payload: FormData) {
   const response = await apiClient.post<AdminPaymentAssetApi>("/api/admin/payment-assets/", payload, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-  return { ...response.data, id: String(response.data.id) };
+  return {
+    ...response.data,
+    id: String(response.data.id),
+    usd_rate: Number(response.data.usd_rate),
+  };
 }
 
 export async function updateAdminPaymentAsset(id: string, payload: FormData) {
   const response = await apiClient.put<AdminPaymentAssetApi>(`/api/admin/payment-assets/${id}/`, payload, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-  return { ...response.data, id: String(response.data.id) };
+  return {
+    ...response.data,
+    id: String(response.data.id),
+    usd_rate: Number(response.data.usd_rate),
+  };
 }
 
 export async function deleteAdminPaymentAsset(id: string) {
+  await apiClient.delete(`/api/admin/payment-assets/${id}/`);
+}
+
+export async function getAdminWalletAssets() {
+  const assets = await getAdminPaymentAssets();
+  return assets.map((asset) => ({
+    id: asset.id,
+    name: asset.name,
+    symbol: asset.symbol,
+    network: asset.network,
+    wallet_address: asset.wallet_address,
+    qr_code: asset.qr_code_image,
+    qr_code_image: asset.qr_code_image,
+    instructions: asset.instructions,
+    usd_rate: asset.usd_rate,
+    is_active: asset.is_active,
+  }));
+}
+
+export async function createAdminWalletAsset(payload: FormData) {
+  payload.set("method_type", "crypto");
+  if (!payload.get("display_order")) {
+    payload.set("display_order", "0");
+  }
+  const qrCode = payload.get("qr_code");
+  if (qrCode) {
+    payload.set("qr_code_image", qrCode);
+    payload.delete("qr_code");
+  }
+  const response = await apiClient.post<AdminPaymentAssetApi>("/api/admin/payment-assets/", payload, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return {
+    id: String(response.data.id),
+    name: response.data.name,
+    symbol: response.data.symbol,
+    network: response.data.network,
+    wallet_address: response.data.wallet_address,
+    qr_code: response.data.qr_code_image,
+    qr_code_image: response.data.qr_code_image,
+    instructions: response.data.instructions,
+    usd_rate: Number(response.data.usd_rate),
+    is_active: response.data.is_active,
+  };
+}
+
+export async function updateAdminWalletAsset(id: string, payload: FormData) {
+  payload.set("method_type", "crypto");
+  if (!payload.get("display_order")) {
+    payload.set("display_order", "0");
+  }
+  const qrCode = payload.get("qr_code");
+  if (qrCode) {
+    payload.set("qr_code_image", qrCode);
+    payload.delete("qr_code");
+  }
+  const response = await apiClient.put<AdminPaymentAssetApi>(`/api/admin/payment-assets/${id}/`, payload, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return {
+    id: String(response.data.id),
+    name: response.data.name,
+    symbol: response.data.symbol,
+    network: response.data.network,
+    wallet_address: response.data.wallet_address,
+    qr_code: response.data.qr_code_image,
+    qr_code_image: response.data.qr_code_image,
+    instructions: response.data.instructions,
+    usd_rate: Number(response.data.usd_rate),
+    is_active: response.data.is_active,
+  };
+}
+
+export async function deleteAdminWalletAsset(id: string) {
   await apiClient.delete(`/api/admin/payment-assets/${id}/`);
 }
 
@@ -247,6 +333,12 @@ export async function getAdminWalletDeposits() {
   return response.data.map((deposit) => ({
     ...deposit,
     amount: Number(deposit.amount),
+    asset_amount: deposit.asset_amount !== undefined && deposit.asset_amount !== null
+      ? Number(deposit.asset_amount)
+      : null,
+    credited_amount_usd: deposit.credited_amount_usd !== undefined
+      ? Number(deposit.credited_amount_usd)
+      : undefined,
   }));
 }
 
@@ -258,6 +350,12 @@ export async function confirmAdminWalletDeposit(id: number, admin_note = "") {
   return {
     ...response.data,
     amount: Number(response.data.amount),
+    asset_amount: response.data.asset_amount !== undefined && response.data.asset_amount !== null
+      ? Number(response.data.asset_amount)
+      : null,
+    credited_amount_usd: response.data.credited_amount_usd !== undefined
+      ? Number(response.data.credited_amount_usd)
+      : undefined,
   };
 }
 
@@ -269,6 +367,12 @@ export async function rejectAdminWalletDeposit(id: number, admin_note = "") {
   return {
     ...response.data,
     amount: Number(response.data.amount),
+    asset_amount: response.data.asset_amount !== undefined && response.data.asset_amount !== null
+      ? Number(response.data.asset_amount)
+      : null,
+    credited_amount_usd: response.data.credited_amount_usd !== undefined
+      ? Number(response.data.credited_amount_usd)
+      : undefined,
   };
 }
 

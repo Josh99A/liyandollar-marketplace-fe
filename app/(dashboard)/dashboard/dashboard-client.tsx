@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { startTransition, useEffect, useMemo, useState } from "react";
 import { PackageCheck, Timer, Wallet } from "lucide-react";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -132,6 +133,34 @@ export function DashboardClient() {
                 <p className="mt-2 text-2xl font-bold">{value}</p>
               </div>
             ))}
+          </div>
+
+          <div className="rounded-[1.75rem] border border-border bg-card/90 p-5 shadow-[var(--shadow-soft)]">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                  Quick access
+                </p>
+                <h2 className="mt-2 text-xl font-semibold">Need to top up your balance?</h2>
+                <p className="mt-2 text-sm text-muted">
+                  Start a deposit request in one step and come back here to track confirmation.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/dashboard/wallet/deposit"
+                  className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white"
+                >
+                  Deposit now
+                </Link>
+                <Link
+                  href="/dashboard/wallet"
+                  className="rounded-full border border-border px-5 py-3 text-sm font-semibold"
+                >
+                  View wallet
+                </Link>
+              </div>
+            </div>
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">

@@ -42,6 +42,9 @@ export function WalletDepositClient() {
     () => assets.find((asset) => asset.id === selectedId) ?? null,
     [assets, selectedId],
   );
+  const estimatedUsdCredit = selectedAsset?.usd_rate && form.amount
+    ? Number(form.amount) * selectedAsset.usd_rate
+    : 0;
 
   const handleCopy = async () => {
     if (!selectedAsset) return;
@@ -59,7 +62,7 @@ export function WalletDepositClient() {
     setError(null);
     try {
       await createDepositRequest({
-        crypto_asset_id: selectedAsset.id,
+        payment_asset_id: selectedAsset.id,
         amount: Number(form.amount),
         tx_hash: form.tx_hash || undefined,
         note: form.note || undefined,
@@ -78,8 +81,8 @@ export function WalletDepositClient() {
     <div className="space-y-8">
       <SectionHeading
         eyebrow="Deposit"
-        title="Select a crypto asset and submit a deposit request"
-        description="Deposits are confirmed manually. Send funds using the exact network and wallet address below to avoid delays."
+        title="Use any checkout payment asset to fund your wallet"
+        description="Deposits are submitted in the selected asset, then confirmed into your total available USD wallet balance so you can buy any product."
       />
 
       {loading ? (
@@ -90,6 +93,10 @@ export function WalletDepositClient() {
       ) : error ? (
         <div className="rounded-[1.75rem] border border-[var(--color-danger)]/30 bg-[var(--color-danger-soft)] p-6 text-sm text-[var(--color-danger)]">
           {error}
+        </div>
+      ) : assets.length === 0 ? (
+        <div className="rounded-[1.75rem] border border-border bg-card/90 p-6 text-sm text-muted">
+          No deposit assets are configured yet. Add them from the admin dashboard under the `Wallet` tab.
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
@@ -108,12 +115,15 @@ export function WalletDepositClient() {
                   </p>
                   <h3 className="mt-2 text-lg font-semibold">{asset.name}</h3>
                   <p className="mt-1 text-sm text-muted">{asset.network}</p>
-                <p className="mt-2 text-xs leading-6 text-muted">
+                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                    1 {asset.symbol} = ${(asset.usd_rate ?? 0).toFixed(2)} USD
+                  </p>
+                  <p className="mt-2 text-xs leading-6 text-muted">
                     {asset.instructions || "Send using the network shown. Manual confirmation required."}
-                </p>
-              </button>
-            );
-          })}
+                  </p>
+                </button>
+              );
+            })}
           </div>
 
           {selectedAsset ? (
@@ -152,7 +162,7 @@ export function WalletDepositClient() {
 
               <div className="mt-6 grid gap-4">
                 <label className="space-y-2 text-sm font-medium">
-                  <span>Amount</span>
+                  <span>Amount in {selectedAsset.symbol}</span>
                   <input
                     type="number"
                     value={form.amount}
@@ -161,6 +171,15 @@ export function WalletDepositClient() {
                     placeholder="0.00"
                   />
                 </label>
+                <div className="rounded-2xl border border-border bg-card/80 px-4 py-3 text-sm">
+                  <p className="text-muted">Estimated USD wallet credit</p>
+                  <p className="mt-2 text-xl font-semibold">
+                    ${estimatedUsdCredit.toFixed(2)}
+                  </p>
+                  <p className="mt-1 text-xs text-muted">
+                    Conversion rate: 1 {selectedAsset.symbol} = ${(selectedAsset.usd_rate ?? 0).toFixed(2)} USD
+                  </p>
+                </div>
                 <label className="space-y-2 text-sm font-medium">
                   <span>Transaction hash (optional)</span>
                   <input
@@ -182,7 +201,7 @@ export function WalletDepositClient() {
 
               <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-400/25 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200">
                 <AlertTriangle className="mt-0.5 h-4 w-4" />
-                <p>Only send funds on the selected network. Deposits are released after admin confirmation.</p>
+                <p>Only send funds on the selected network. After admin confirmation, your wallet is credited in USD and can be used to buy any product.</p>
               </div>
 
               <button

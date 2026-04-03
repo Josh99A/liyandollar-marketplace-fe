@@ -5,6 +5,7 @@ function mapPaymentAsset(asset: PaymentAsset & { id: number }) {
   return {
     ...asset,
     id: String(asset.id),
+    usd_rate: Number(asset.usd_rate),
   };
 }
 

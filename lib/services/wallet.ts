@@ -1,7 +1,7 @@
 import { apiClient } from "@/lib/api/client";
 import type {
   DepositRequest,
-  WalletAsset,
+  PaymentAsset,
   WalletSummary,
   WalletTransactionLog,
 } from "@/types";
@@ -28,14 +28,19 @@ export async function getWallet() {
 }
 
 export async function getDepositAssets() {
-  const response = await apiClient.get<(WalletAsset & { id: number })[]>(
+  const response = await apiClient.get<(PaymentAsset & { id: number; usd_rate: string | number })[]>(
     "/api/wallet/deposit-assets/",
   );
-  return response.data.map((asset) => ({ ...asset, id: String(asset.id) }));
+  return response.data.map((asset) => ({
+    ...asset,
+    id: String(asset.id),
+    qr_code: asset.qr_code_image,
+    usd_rate: Number(asset.usd_rate),
+  }));
 }
 
 export async function createDepositRequest(payload: {
-  crypto_asset_id: string;
+  payment_asset_id: string;
   amount: number;
   tx_hash?: string;
   note?: string;
@@ -44,6 +49,12 @@ export async function createDepositRequest(payload: {
   return {
     ...response.data,
     amount: Number(response.data.amount),
+    asset_amount: response.data.asset_amount !== undefined && response.data.asset_amount !== null
+      ? Number(response.data.asset_amount)
+      : null,
+    credited_amount_usd: response.data.credited_amount_usd !== undefined
+      ? Number(response.data.credited_amount_usd)
+      : undefined,
   };
 }
 
@@ -52,6 +63,12 @@ export async function getDepositRequests() {
   return response.data.map((deposit) => ({
     ...deposit,
     amount: Number(deposit.amount),
+    asset_amount: deposit.asset_amount !== undefined && deposit.asset_amount !== null
+      ? Number(deposit.asset_amount)
+      : null,
+    credited_amount_usd: deposit.credited_amount_usd !== undefined
+      ? Number(deposit.credited_amount_usd)
+      : undefined,
   }));
 }
 
@@ -60,6 +77,12 @@ export async function getDepositRequest(id: number) {
   return {
     ...response.data,
     amount: Number(response.data.amount),
+    asset_amount: response.data.asset_amount !== undefined && response.data.asset_amount !== null
+      ? Number(response.data.asset_amount)
+      : null,
+    credited_amount_usd: response.data.credited_amount_usd !== undefined
+      ? Number(response.data.credited_amount_usd)
+      : undefined,
   };
 }
 

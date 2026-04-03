@@ -47,6 +47,7 @@ export type PaymentAsset = {
   qr_code_image: string | null;
   instructions: string;
   display_order: number;
+  usd_rate: number;
 };
 
 export type PaymentSubmission = {
@@ -81,16 +82,21 @@ export type WalletAsset = {
   network: string;
   wallet_address: string;
   qr_code: string | null;
+  qr_code_image?: string | null;
   instructions: string;
+  usd_rate?: number;
 };
 
 export type DepositRequest = {
   id: number;
   amount: number;
+  asset_amount?: number | null;
+  credited_amount_usd?: number;
   status: "pending" | "confirmed" | "rejected";
   tx_hash: string;
   note: string;
   crypto_asset: WalletAsset;
+  payment_asset?: PaymentAsset | null;
   created_at: string;
   admin_note: string;
 };

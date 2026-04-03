@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowDownLeft, ArrowUpRight, Wallet2 } from "lucide-react";
 import type { WalletSummary } from "@/types";
 
@@ -15,6 +16,20 @@ export function WalletCard({ wallet }: { wallet: WalletSummary }) {
           <h2 className="mt-2 font-display text-4xl font-bold">
             ${wallet.balance.toFixed(2)}
           </h2>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link
+              href="/dashboard/wallet/deposit"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white"
+            >
+              Deposit funds
+            </Link>
+            <Link
+              href="/dashboard/wallet"
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-bg px-5 py-3 text-sm font-semibold"
+            >
+              Open wallet
+            </Link>
+          </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="rounded-3xl border border-border bg-bg/65 p-4">

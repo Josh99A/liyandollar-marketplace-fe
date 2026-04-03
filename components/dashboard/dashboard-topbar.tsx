@@ -100,6 +100,12 @@ export function DashboardTopbar() {
               Admin panel
             </Link>
           ) : null}
+          <Link
+            href="/dashboard/wallet/deposit"
+            className="ml-4 hidden items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-soft)] lg:inline-flex"
+          >
+            Deposit funds
+          </Link>
         </div>
 
         <div className="flex items-center gap-2">
@@ -209,6 +215,13 @@ export function DashboardTopbar() {
                 <p className="mt-1 text-sm font-semibold">{displayName}</p>
               </div>
               <div className="mt-2 flex flex-col gap-1">
+                <Link
+                  href="/dashboard/wallet/deposit"
+                  className="rounded-xl px-3 py-2 text-sm font-semibold text-foreground hover:bg-bg"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Deposit funds
+                </Link>
                 <Link
                   href="/dashboard/settings/account"
                   className="rounded-xl px-3 py-2 text-sm font-semibold text-foreground hover:bg-bg"

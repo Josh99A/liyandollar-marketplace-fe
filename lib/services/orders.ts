@@ -21,6 +21,7 @@ function mapOrder(order: OrderApi): Order {
       ? {
           ...order.selected_payment_asset,
           id: String(order.selected_payment_asset.id),
+          usd_rate: Number(order.selected_payment_asset.usd_rate),
         }
       : null,
   };
@@ -61,6 +62,7 @@ function mapGuestOrder(order: GuestOrderApi): Order {
       ? {
           ...order.selected_payment_asset,
           id: String(order.selected_payment_asset.id),
+          usd_rate: Number(order.selected_payment_asset.usd_rate),
         }
       : null,
   };
@@ -113,6 +115,7 @@ export async function getGuestPaymentDetails(token: string) {
     asset: {
       ...response.data.asset,
       id: String(response.data.asset.id),
+      usd_rate: Number(response.data.asset.usd_rate),
     },
   };
 }
@@ -201,6 +204,7 @@ export async function getPaymentDetails(orderId: string) {
     asset: {
       ...response.data.asset,
       id: String(response.data.asset.id),
+      usd_rate: Number(response.data.asset.usd_rate),
     },
   };
 }
