@@ -128,7 +128,7 @@ export function WalletDepositClient() {
 
           {selectedAsset ? (
             <div className="grid gap-6 self-start lg:grid-cols-[0.9fr_1.1fr] xl:grid-cols-1">
-              <section className="rounded-3xl border border-border bg-bg/60 p-5 xl:sticky xl:top-24">
+              <section className="rounded-3xl border border-border bg-card/95 p-5 shadow-[var(--shadow-soft)]">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
@@ -149,7 +149,7 @@ export function WalletDepositClient() {
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-2xl border border-border bg-card/80 p-4">
+                <div className="mt-5 rounded-2xl border border-border bg-bg/70 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
                     Wallet address
                   </p>
@@ -166,7 +166,7 @@ export function WalletDepositClient() {
                   </button>
                 </div>
 
-                <div className="mt-5 rounded-2xl border border-border bg-card/80 p-4">
+                <div className="mt-5 rounded-2xl border border-border bg-bg/70 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
                     QR code
                   </p>
@@ -184,7 +184,7 @@ export function WalletDepositClient() {
                 </div>
               </section>
 
-              <section className="rounded-3xl border border-border bg-bg/60 p-5">
+              <section className="rounded-3xl border border-border bg-card/95 p-5 shadow-[var(--shadow-soft)]">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
                   Deposit request
                 </p>
