@@ -9,7 +9,7 @@ function statusStyles(status: string) {
       return "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300";
     case "rejected":
     case "failed":
-      return "bg-rose-500/12 text-rose-700 dark:text-rose-300";
+      return "border border-[var(--color-danger-border)] bg-[var(--color-danger-soft)] text-[var(--color-danger-foreground)]";
     default:
       return "bg-amber-500/12 text-amber-700 dark:text-amber-300";
   }

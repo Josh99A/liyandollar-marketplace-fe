@@ -20,8 +20,8 @@ function StatusBadge({ status }: { status: string }) {
     pending: "border border-[var(--color-warning-border)] bg-[var(--color-warning-soft)] text-[var(--color-warning-foreground)]",
     awaiting_confirmation: "bg-sky-500/12 text-sky-700 dark:text-sky-300",
     paid: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
-    cancelled: "bg-rose-500/12 text-rose-700 dark:text-rose-300",
-    failed: "bg-rose-500/12 text-rose-700 dark:text-rose-300",
+    cancelled: "border border-[var(--color-danger-border)] bg-[var(--color-danger-soft)] text-[var(--color-danger-foreground)]",
+    failed: "border border-[var(--color-danger-border)] bg-[var(--color-danger-soft)] text-[var(--color-danger-foreground)]",
   } as const;
 
   return (
@@ -331,7 +331,7 @@ export function GuestOrderDetailClient({ token }: { token: string }) {
           </div>
         ) : null}
         {error ? (
-          <div className="mt-6 rounded-2xl border border-[var(--color-danger)]/30 bg-[var(--color-danger-soft)] p-4 text-sm text-[var(--color-danger)]">
+          <div className="mt-6 rounded-2xl border border-[var(--color-danger-border)] bg-[var(--color-danger-soft)] p-4 text-sm text-[var(--color-danger-foreground)]">
             {error}
           </div>
         ) : null}

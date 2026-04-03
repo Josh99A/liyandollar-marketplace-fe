@@ -554,11 +554,11 @@ export function AdminDashboardClient() {
 
       {message ? <div className="rounded-2xl border border-[var(--color-success-border)] bg-[var(--color-success-soft)] p-4 text-sm text-[var(--color-success-foreground)]">{message}</div> : null}
       {error ? (
-        <div className="rounded-2xl border border-[var(--color-danger)]/30 bg-[var(--color-danger-soft)] p-4 text-sm text-[var(--color-danger)]">
+        <div className="rounded-2xl border border-[var(--color-danger-border)] bg-[var(--color-danger-soft)] p-4 text-sm text-[var(--color-danger-foreground)]">
           <p>{error}</p>
           {errorDetails ? (
-            <details className="mt-3 rounded-xl border border-[var(--color-danger)]/20 bg-white/60 p-3 text-xs text-slate-700">
-              <summary className="cursor-pointer font-semibold text-[var(--color-danger)]">
+            <details className="mt-3 rounded-xl border border-[var(--color-danger-border)] bg-white/60 p-3 text-xs text-slate-700 dark:bg-slate-950/30 dark:text-slate-200">
+              <summary className="cursor-pointer font-semibold text-[var(--color-danger-foreground)]">
                 Debug details
               </summary>
               <pre className="mt-2 whitespace-pre-wrap">{errorDetails}</pre>

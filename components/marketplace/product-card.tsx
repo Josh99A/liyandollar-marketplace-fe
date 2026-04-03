@@ -91,6 +91,7 @@ export function ProductCard({
   const [credentials, setCredentials] = useState<CredentialsResponse | null>(null);
   const [walletSummary, setWalletSummary] = useState<WalletSummary | null>(null);
   const [walletLoading, setWalletLoading] = useState(false);
+  const [walletError, setWalletError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const maxQuantity = product.singleItem ? 1 : (product.stockCount ?? 1);
   const [guestForm, setGuestForm] = useState({
@@ -110,11 +111,13 @@ export function ProductCard({
     if (assetsLoaded) {
       if (user && !walletSummary) {
         setWalletLoading(true);
+        setWalletError(null);
         try {
           const wallet = await getWallet();
           setWalletSummary(wallet);
         } catch {
-          setAssetError("Unable to load wallet balance.");
+          setWalletSummary(null);
+          setWalletError("Wallet balance is unavailable right now. You can still continue with crypto payment.");
         } finally {
           setWalletLoading(false);
         }
@@ -128,17 +131,25 @@ export function ProductCard({
       setAssets(data);
       setAssetsLoaded(true);
       setSelectedAssetId((current) => current ?? data[0]?.id ?? null);
-      if (user) {
-        setWalletLoading(true);
-        const wallet = await getWallet();
-        setWalletSummary(wallet);
-      }
     } catch {
       setAssetError("Unable to load payment assets. Please try again shortly.");
       toast.error("Unable to load payment assets.");
     } finally {
       setLoadingAssets(false);
+    }
+
+    if (user) {
+      setWalletLoading(true);
+      setWalletError(null);
+      try {
+        const wallet = await getWallet();
+        setWalletSummary(wallet);
+      } catch {
+        setWalletSummary(null);
+        setWalletError("Wallet balance is unavailable right now. You can still continue with crypto payment.");
+      } finally {
       setWalletLoading(false);
+      }
     }
   };
 
@@ -153,6 +164,7 @@ export function ProductCard({
     setPaymentDetails(null);
     setMessage(null);
     setCredentials(null);
+    setWalletError(null);
     setProofForm({ tx_hash: "", note: "", screenshot: null });
     setGuestForm({ name: "", email: "" });
     setQuantity(1);
@@ -554,7 +566,7 @@ export function ProductCard({
                 Loading payment assets...
               </div>
             ) : assetError ? (
-              <div className="mt-6 rounded-2xl border border-rose-400/30 bg-rose-500/10 p-4 text-sm text-rose-700 dark:text-rose-200">
+              <div className="mt-6 rounded-2xl border border-[var(--color-danger-border)] bg-[var(--color-danger-soft)] p-4 text-sm text-[var(--color-danger-foreground)]">
                 {assetError}
               </div>
             ) : (
@@ -647,7 +659,9 @@ export function ProductCard({
                               type="email"
                             />
                             {!guestEmailValid ? (
-                              <p className="mt-1 text-xs text-rose-500">Enter a valid email address.</p>
+                              <p className="mt-1 text-xs text-[var(--color-danger-foreground)]">
+                                Enter a valid email address.
+                              </p>
                             ) : null}
                           </label>
                           <div className="flex items-center justify-between rounded-2xl border border-border bg-card/70 px-4 py-3 text-sm">
@@ -728,6 +742,11 @@ export function ProductCard({
                             <div className="mt-3 flex items-center gap-2 text-xs text-muted">
                               <LoaderCircle className="h-4 w-4 animate-spin" />
                               Loading wallet...
+                            </div>
+                          ) : null}
+                          {walletError ? (
+                            <div className="mt-3 rounded-2xl border border-[var(--color-warning-border)] bg-[var(--color-warning-soft)] p-3 text-xs text-[var(--color-warning-foreground)]">
+                              {walletError}
                             </div>
                           ) : null}
                           <button

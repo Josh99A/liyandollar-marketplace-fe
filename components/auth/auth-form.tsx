@@ -179,7 +179,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         </label>
       ) : null}
       {error ? (
-        <p className="rounded-2xl border border-[var(--color-danger)]/30 bg-[var(--color-danger-soft)] px-4 py-3 text-sm text-[var(--color-danger)]">
+        <p className="rounded-2xl border border-[var(--color-danger-border)] bg-[var(--color-danger-soft)] px-4 py-3 text-sm text-[var(--color-danger-foreground)]">
           {error}
         </p>
       ) : null}
