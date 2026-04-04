@@ -8,6 +8,90 @@ import { useAuthStore } from "@/stores/use-auth-store";
 
 type AuthMode = "login" | "register";
 
+type ErrorPayload =
+  | string
+  | string[]
+  | { detail?: string; non_field_errors?: string[]; [key: string]: unknown }
+  | undefined;
+
+function normalizeAuthMessage(message: string, mode: AuthMode, field?: string) {
+  const trimmed = message.trim();
+  const normalized = trimmed.toLowerCase();
+
+  if (normalized.includes("invalid credentials")) {
+    return "Your email, username, or password is incorrect.";
+  }
+  if (normalized.includes("pending") || normalized.includes("approval")) {
+    return "Your account is waiting for admin approval. You can log in once it has been approved.";
+  }
+  if (normalized.includes("ensure this field has at least 8 characters")) {
+    return "Password must be at least 8 characters long.";
+  }
+  if (normalized.includes("this field may not be blank")) {
+    const label = field ? field.replaceAll("_", " ") : "This field";
+    return `${label.charAt(0).toUpperCase()}${label.slice(1)} is required.`;
+  }
+  if (normalized.includes("this field is required")) {
+    const label = field ? field.replaceAll("_", " ") : "This field";
+    return `${label.charAt(0).toUpperCase()}${label.slice(1)} is required.`;
+  }
+  if (field === "email" && normalized.includes("already exists")) {
+    return mode === "register"
+      ? "That email is already registered. Use another email or sign in instead."
+      : trimmed;
+  }
+  if (field === "username" && normalized.includes("already exists")) {
+    return "That username is already in use. Choose a different username.";
+  }
+
+  return trimmed;
+}
+
+function extractAuthErrorMessage(payload: ErrorPayload, mode: AuthMode): string | null {
+  if (!payload) return null;
+
+  if (typeof payload === "string") {
+    return normalizeAuthMessage(payload, mode);
+  }
+
+  if (Array.isArray(payload)) {
+    const first = payload.find((item) => typeof item === "string");
+    return first ? normalizeAuthMessage(first, mode) : null;
+  }
+
+  if (typeof payload === "object") {
+    if (typeof payload.detail === "string") {
+      return normalizeAuthMessage(payload.detail, mode);
+    }
+
+    if (Array.isArray(payload.non_field_errors) && payload.non_field_errors[0]) {
+      return normalizeAuthMessage(payload.non_field_errors[0], mode);
+    }
+
+    const fieldOrder = ["email", "username", "password", "first_name", "last_name"];
+    for (const field of fieldOrder) {
+      const value = payload[field];
+      if (typeof value === "string") {
+        return normalizeAuthMessage(value, mode, field);
+      }
+      if (Array.isArray(value) && typeof value[0] === "string") {
+        return normalizeAuthMessage(value[0], mode, field);
+      }
+    }
+
+    for (const [field, value] of Object.entries(payload)) {
+      if (typeof value === "string") {
+        return normalizeAuthMessage(value, mode, field);
+      }
+      if (Array.isArray(value) && typeof value[0] === "string") {
+        return normalizeAuthMessage(value[0], mode, field);
+      }
+    }
+  }
+
+  return null;
+}
+
 export function AuthForm({ mode }: { mode: AuthMode }) {
   const isRegister = mode === "register";
   const router = useRouter();
@@ -74,16 +158,14 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       }
       toast.success(isRegister ? "Account created. Welcome!" : "Welcome back.");
     } catch (error) {
-      const fallback = "We couldn't sign you in. Please check your details and try again.";
-      const rawMessage =
+      const payload =
         typeof error === "object" && error && "response" in error
-          ? (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? fallback
-          : fallback;
-      const normalized = rawMessage.toLowerCase();
-      const message =
-        normalized.includes("pending") || normalized.includes("approval")
-          ? "Your account is pending admin approval. We'll notify you once it's approved."
-          : rawMessage;
+          ? (error as { response?: { data?: ErrorPayload } }).response?.data
+          : undefined;
+      const fallback = isRegister
+        ? "We could not create your account right now. Please review your details and try again."
+        : "We could not log you in right now. Please review your details and try again.";
+      const message = extractAuthErrorMessage(payload, mode) ?? fallback;
       setError(message);
       toast.error(message);
     }
