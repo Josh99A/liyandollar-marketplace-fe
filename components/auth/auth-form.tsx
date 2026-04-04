@@ -92,6 +92,64 @@ function extractAuthErrorMessage(payload: ErrorPayload, mode: AuthMode): string 
   return null;
 }
 
+function getPasswordStrength(password: string) {
+  const checks = [
+    password.length >= 8,
+    /[a-z]/.test(password) && /[A-Z]/.test(password),
+    /\d/.test(password),
+    /[^A-Za-z0-9]/.test(password),
+  ];
+  const score = checks.filter(Boolean).length;
+
+  if (!password) {
+    return {
+      score: 0,
+      label: "Enter a password",
+      hint: "Use at least 8 characters with a mix of letters, numbers, and symbols.",
+      barClassName: "bg-slate-300 dark:bg-slate-700",
+      textClassName: "text-muted",
+    };
+  }
+
+  if (score <= 1) {
+    return {
+      score,
+      label: "Weak",
+      hint: "Add uppercase letters, numbers, or symbols to make it safer.",
+      barClassName: "bg-[var(--color-danger)]",
+      textClassName: "text-[var(--color-danger-foreground)]",
+    };
+  }
+
+  if (score === 2) {
+    return {
+      score,
+      label: "Fair",
+      hint: "Good start. Add more variety to strengthen it.",
+      barClassName: "bg-amber-500",
+      textClassName: "text-amber-700 dark:text-amber-300",
+    };
+  }
+
+  if (score === 3) {
+    return {
+      score,
+      label: "Good",
+      hint: "This password is solid. A symbol or extra length makes it even better.",
+      barClassName: "bg-sky-500",
+      textClassName: "text-sky-700 dark:text-sky-300",
+    };
+  }
+
+  return {
+    score,
+    label: "Strong",
+    hint: "Strong password.",
+    barClassName: "bg-emerald-500",
+    textClassName: "text-emerald-700 dark:text-emerald-300",
+  };
+}
+
 export function AuthForm({ mode }: { mode: AuthMode }) {
   const isRegister = mode === "register";
   const router = useRouter();
@@ -109,6 +167,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const passwordStrength = getPasswordStrength(form.password);
 
   const handleChange = (key: keyof typeof form, value: string) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -235,6 +294,28 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
+        {isRegister ? (
+          <div className="space-y-2">
+            <div className="grid grid-cols-4 gap-2">
+              {[0, 1, 2, 3].map((index) => (
+                <div
+                  key={index}
+                  className={`h-2 rounded-full ${
+                    index < passwordStrength.score
+                      ? passwordStrength.barClassName
+                      : "bg-slate-200 dark:bg-slate-800"
+                  }`}
+                />
+              ))}
+            </div>
+            <div className="flex items-center justify-between gap-3 text-xs">
+              <span className={`font-semibold ${passwordStrength.textClassName}`}>
+                {passwordStrength.label}
+              </span>
+              <span className="text-muted">{passwordStrength.hint}</span>
+            </div>
+          </div>
+        ) : null}
       </label>
       {isRegister ? (
         <label className="space-y-2 text-sm font-medium">
