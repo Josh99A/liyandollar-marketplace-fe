@@ -128,6 +128,15 @@ function getLoginStatusStyles(lastLogin?: string | null) {
   return "bg-rose-500/15 text-foreground border border-rose-500/30";
 }
 
+function slugifyProductTitle(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/['"]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export function AdminDashboardClient() {
   const router = useRouter();
   const { user, hasBootstrapped } = useAuthStore();
@@ -166,6 +175,7 @@ export function AdminDashboardClient() {
     existingCategoryIcon: null as string | null,
     existingSubcategoryIcon: null as string | null,
   });
+  const [productSlugManuallyEdited, setProductSlugManuallyEdited] = useState(false);
   const [assetForm, setAssetForm] = useState({
     id: "",
     name: "",
@@ -209,6 +219,16 @@ export function AdminDashboardClient() {
     setSubcategoryIconPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [productForm.subcategory_icon, productForm.existingSubcategoryIcon]);
+
+  useEffect(() => {
+    if (productSlugManuallyEdited) return;
+    const nextSlug = slugifyProductTitle(productForm.title);
+    setProductForm((current) => (
+      current.slug === nextSlug
+        ? current
+        : { ...current, slug: nextSlug }
+    ));
+  }, [productForm.title, productSlugManuallyEdited]);
 
   useEffect(() => {
     if (!armedAction) return;
@@ -279,7 +299,8 @@ export function AdminDashboardClient() {
     return null;
   }
 
-  const resetProductForm = () =>
+  const resetProductForm = () => {
+    setProductSlugManuallyEdited(false);
     setProductForm({
       id: "",
       title: "",
@@ -301,6 +322,7 @@ export function AdminDashboardClient() {
       existingCategoryIcon: null,
       existingSubcategoryIcon: null,
     });
+  };
 
   const resetAssetForm = () =>
     setAssetForm({
@@ -524,10 +546,17 @@ export function AdminDashboardClient() {
                   </span>
                   <input
                     value={productForm[key as keyof typeof productForm] as string}
-                    onChange={(event) =>
-                      setProductForm((current) => ({ ...current, [key]: event.target.value }))
-                    }
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      if (key === "title") {
+                        setProductForm((current) => ({ ...current, title: value }));
+                        return;
+                      }
+                      setProductSlugManuallyEdited(true);
+                      setProductForm((current) => ({ ...current, slug: slugifyProductTitle(value) }));
+                    }}
                     className="w-full rounded-2xl border border-border bg-bg/60 px-4 py-3 outline-none focus:border-primary"
+                    placeholder={key === "slug" ? "Auto-generated from the title" : undefined}
                     required={key === "title"}
                   />
                 </label>
@@ -906,7 +935,8 @@ export function AdminDashboardClient() {
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        onClick={() =>
+                        onClick={() => {
+                          setProductSlugManuallyEdited(true);
                           setProductForm({
                             id: product.id,
                             title: product.name,
@@ -930,8 +960,8 @@ export function AdminDashboardClient() {
                             existingImage: product.image,
                             existingCategoryIcon: product.categoryIcon ?? null,
                             existingSubcategoryIcon: product.subcategoryIcon ?? null,
-                          })
-                        }
+                          });
+                        }}
                         className="rounded-full border border-border px-4 py-2 text-sm font-semibold"
                       >
                         Edit

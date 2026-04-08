@@ -484,7 +484,7 @@ export function ProductCard({
             )}
             <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-950/35 to-transparent" />
           </div>
-          <div className="mt-5 flex items-center justify-between gap-3">
+          <div className="mt-5 flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
             <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
               {product.category}
             </span>
@@ -493,10 +493,10 @@ export function ProductCard({
               {product.rating}
             </span>
           </div>
-          <h3 className="mt-4 text-xl font-semibold">{product.name}</h3>
-          <p className="mt-2 text-sm leading-7 text-muted">{product.description}</p>
+          <h3 className="mt-4 text-center text-xl font-semibold sm:text-left">{product.name}</h3>
+          <p className="mt-2 text-center text-sm leading-7 text-muted sm:text-left">{product.description}</p>
           {product.tags.length > 0 ? (
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
               {product.tags.map((tag) => (
                 <button
                   key={`${product.id}-${tag}`}
@@ -509,12 +509,12 @@ export function ProductCard({
               ))}
             </div>
           ) : null}
-          <div className="mt-5 flex items-center justify-between">
+          <div className="mt-5 flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
             <div>
               <p className="text-sm text-muted">Starting at</p>
               <p className="text-2xl font-bold">${product.price.toFixed(2)}</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
               <button
                 type="button"
                 onClick={() => void openModal()}
