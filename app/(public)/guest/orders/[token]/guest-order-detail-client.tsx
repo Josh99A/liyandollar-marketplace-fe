@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Download, LoaderCircle } from "lucide-react";
+import { Copy, Download, LoaderCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { SectionHeading } from "@/components/ui/section-heading";
 import {
@@ -39,6 +39,7 @@ export function GuestOrderDetailClient({ token }: { token: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [copiedAddress, setCopiedAddress] = useState(false);
   const [txHash, setTxHash] = useState("");
   const [note, setNote] = useState("");
   const [screenshot, setScreenshot] = useState<File | null>(null);
@@ -125,6 +126,13 @@ export function GuestOrderDetailClient({ token }: { token: string }) {
     }
   };
 
+  const handleCopyAddress = async () => {
+    if (!paymentDetails?.asset.wallet_address) return;
+    await navigator.clipboard.writeText(paymentDetails.asset.wallet_address);
+    setCopiedAddress(true);
+    window.setTimeout(() => setCopiedAddress(false), 1800);
+  };
+
   if (loading) {
     return (
       <div className="mx-auto flex w-full max-w-5xl items-center gap-3 px-4 py-10 sm:px-6 lg:px-8">
@@ -187,9 +195,20 @@ export function GuestOrderDetailClient({ token }: { token: string }) {
               <p className="mt-1 text-sm text-muted">
                 Network: {paymentDetails.asset.network}
               </p>
-              <p className="mt-4 break-all rounded-2xl border border-border bg-card px-4 py-3 font-mono text-sm">
-                {paymentDetails.asset.wallet_address}
-              </p>
+              <div className="mt-4 flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 font-mono text-sm">
+                <span className="break-all">{paymentDetails.asset.wallet_address}</span>
+                <button
+                  type="button"
+                  onClick={handleCopyAddress}
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-bg text-muted"
+                  aria-label="Copy wallet address"
+                >
+                  <Copy className="h-4 w-4" />
+                </button>
+              </div>
+              {copiedAddress ? (
+                <p className="mt-2 text-xs text-emerald-600 dark:text-emerald-300">Address copied.</p>
+              ) : null}
               {paymentDetails.asset.qr_code_image ? (
                 <Image
                   src={paymentDetails.asset.qr_code_image}
