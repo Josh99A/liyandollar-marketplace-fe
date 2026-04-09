@@ -1,4 +1,4 @@
-import { CheckoutClient } from "./checkout-client";
+import { redirect } from "next/navigation";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -7,8 +7,6 @@ export default async function CheckoutPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const params = await searchParams;
-  const slug = typeof params.product === "string" ? params.product : "";
-
-  return <CheckoutClient slug={slug} />;
+  await searchParams;
+  redirect("/");
 }

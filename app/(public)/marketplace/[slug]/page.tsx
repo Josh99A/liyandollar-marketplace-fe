@@ -5,6 +5,6 @@ export default async function LegacyMarketplaceProductPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params;
-  redirect(`/products/${slug}`);
+  await params;
+  redirect("/");
 }

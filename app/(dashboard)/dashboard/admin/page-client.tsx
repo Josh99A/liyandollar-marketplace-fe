@@ -106,6 +106,19 @@ function formatErrorDetails(error: unknown) {
   }
 }
 
+function extractApiErrorMessage(error: unknown, fallback: string) {
+  if (typeof error === "object" && error && "response" in error) {
+    const data = (error as { response?: { data?: { detail?: string } } }).response?.data;
+    if (typeof data?.detail === "string" && data.detail.trim()) {
+      return data.detail;
+    }
+  }
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  return fallback;
+}
+
 function formatLastLogin(value?: string | null) {
   if (!value) return "Never logged in";
   const date = new Date(value);
@@ -983,9 +996,19 @@ export function AdminDashboardClient() {
                             return;
                           }
                           setArmedAction(null);
-                          await deleteAdminProduct(product.id);
-                          setProducts((current) => current.filter((item) => item.id !== product.id));
-                          toast.success("Product deleted.");
+                          try {
+                            await deleteAdminProduct(product.id);
+                            setProducts((current) => current.filter((item) => item.id !== product.id));
+                            toast.success("Product deleted.");
+                          } catch (error) {
+                            const message = extractApiErrorMessage(
+                              error,
+                              "Unable to delete this product right now.",
+                            );
+                            setError(message);
+                            setErrorDetails(formatErrorDetails(error));
+                            toast.error(message);
+                          }
                         }}
                         className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold ${
                           armedAction === `delete-product-${product.id}`

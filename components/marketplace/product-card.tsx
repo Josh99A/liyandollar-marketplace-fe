@@ -4,7 +4,6 @@
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import {
-  ArrowRight,
   Camera,
   CheckCircle2,
   Copy,
@@ -117,7 +116,7 @@ export function ProductCard({
           setWalletSummary(wallet);
         } catch {
           setWalletSummary(null);
-          setWalletError("Wallet balance is unavailable right now. You can still continue with crypto payment.");
+          setWalletError("Wallet balance is unavailable. You can still pay with crypto.");
         } finally {
           setWalletLoading(false);
         }
@@ -146,7 +145,7 @@ export function ProductCard({
         setWalletSummary(wallet);
       } catch {
         setWalletSummary(null);
-        setWalletError("Wallet balance is unavailable right now. You can still continue with crypto payment.");
+        setWalletError("Wallet balance is unavailable. You can still pay with crypto.");
       } finally {
       setWalletLoading(false);
       }
@@ -204,7 +203,7 @@ export function ProductCard({
         const details = await getPaymentDetails(created.id);
         setOrder(updated);
         setPaymentDetails(details);
-        setMessage("Payment instructions ready. Send the exact amount and network.");
+        setMessage("Payment details ready.");
       } else {
         const created = await createGuestOrder({
           productId: product.id,
@@ -219,9 +218,9 @@ export function ProductCard({
         const details = await getGuestPaymentDetails(created.guest_access_token);
         setOrder(created);
         setPaymentDetails(details);
-        setMessage("Payment instructions ready. Save your secure access link before you leave this page.");
+        setMessage("Payment details ready. Save your access link.");
       }
-      toast.success("Payment instructions ready.");
+      toast.success("Payment details ready.");
     } catch (err) {
       console.error("Failed to create order", err);
       setAssetError("Unable to create the order. Please try again.");
@@ -442,7 +441,7 @@ export function ProductCard({
           </td>
           <td className="px-4 py-4 text-sm text-muted">{product.stockStatus}</td>
           <td className="px-4 py-4">
-            <div className="flex flex-col gap-2 lg:flex-row">
+            <div className="flex flex-col gap-2">
               <button
                 type="button"
                 onClick={() => void openModal()}
@@ -450,13 +449,6 @@ export function ProductCard({
               >
                 Buy
               </button>
-              <Link
-                href={`/products/${product.slug}`}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-bg/70 px-4 py-2 text-sm font-semibold hover:border-primary hover:text-primary"
-              >
-                Details
-                <ArrowRight className="h-4 w-4" />
-              </Link>
             </div>
           </td>
         </tr>
@@ -522,13 +514,6 @@ export function ProductCard({
               >
                 Buy
               </button>
-              <Link
-                href={`/products/${product.slug}`}
-                className="inline-flex items-center gap-2 rounded-full border border-border bg-bg/70 px-4 py-2 text-sm font-semibold hover:-translate-y-0.5 hover:border-primary hover:text-primary"
-              >
-                Details
-                <ArrowRight className="h-4 w-4" />
-              </Link>
             </div>
           </div>
         </article>
@@ -542,13 +527,13 @@ export function ProductCard({
                   <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.28em] text-primary">
-                  Crypto payment
+                  Buy now
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold">
                   {product.name}
                 </h2>
                 <p className="mt-2 text-sm text-muted">
-                  Choose a supported crypto asset to view the QR code and wallet address.
+                  Pick quantity, choose a payment method, and submit proof.
                 </p>
               </div>
               <button
@@ -724,7 +709,7 @@ export function ProductCard({
                         </div>
                       )}
                       <div className="mt-5 rounded-2xl border border-dashed border-border bg-card/50 p-4 text-xs text-muted">
-                        You will receive an order number for support and, for guest checkout, a secure private link for future access.
+                        Guest orders include a private access link.
                       </div>
                     </div>
 
@@ -772,7 +757,7 @@ export function ProductCard({
 
                       <div className="rounded-3xl border border-border bg-bg/60 p-5">
                       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
-                        Payment methods
+                        Pay with
                       </p>
                       <div className="mt-4 grid gap-3">
                           {assets.map((asset) => {
@@ -820,7 +805,7 @@ export function ProductCard({
                       </button>
                         {isGuest ? (
                           <p className="mt-3 text-xs text-muted">
-                            Guests will use the email above to receive updates after confirmation.
+                            We will send updates to that email.
                           </p>
                         ) : null}
                       </div>
@@ -852,7 +837,7 @@ export function ProductCard({
                     <div className="rounded-[1.75rem] border border-border bg-bg/60 p-5">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
-                          Payment details
+                          Payment
                         </p>
                         {order ? (
                           <span className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
@@ -887,7 +872,7 @@ export function ProductCard({
                       </div>
                       {!user && guestAccessUrl ? (
                         <div className="mt-5 rounded-2xl border border-[var(--color-success-border)] bg-[var(--color-success-soft)] p-4 text-xs text-[var(--color-success-foreground)]">
-                          <p className="font-semibold">Save this secure guest access link.</p>
+                          <p className="font-semibold">Save this access link.</p>
                           <p className="mt-2 break-all font-mono">{guestAccessUrl}</p>
                           <div className="mt-3 flex flex-wrap gap-2">
                             <button
@@ -905,7 +890,7 @@ export function ProductCard({
                               View order
                             </Link>
                           </div>
-                          <p className="mt-3">Do not share this link. It is the secure way to return to your purchase later.</p>
+                          <p className="mt-3">Do not share this link.</p>
                         </div>
                       ) : null}
                       <div className="mt-5 space-y-3">
